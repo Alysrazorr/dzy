@@ -1,50 +1,52 @@
 <template>
-  <el-row :style="styles">
-    <el-row type="flex" justify="end">
-      <el-col :span="2">
-        <el-button type="primary" @click="dialogVisible = true">新问卷</el-button>
-      </el-col>
-    </el-row>
-    <el-row>
-      <el-col :span="24">
-        <el-table
-          :data="tableData"
-          v-loading="loading"
-          style="width: 100%">
-          <el-table-column
-            prop="p_id"
-            label="ID"
-            width="100"
-            align="center">
-          </el-table-column>
-          <el-table-column
-            prop="title"
-            label="问卷标题"
-            min-width="800"
-            align="left">>
-          </el-table-column>
-          <el-table-column
-            width="200"
-            label="操作"
-            align="left">>
-            <template slot-scope="scope">
-              <el-button
-                type="primary"
-                icon="el-icon-edit"
-                circle>
-              </el-button>
-              <el-button
-                type="success"
-                icon="el-icon-share"
-                circle>
-              </el-button>
-            </template>
-          </el-table-column>
-        </el-table>
-      </el-col>
+  <div id="root">
+    <el-row :style="styles">
+      <el-row type="flex" justify="end">
+        <el-col :span="2">
+          <el-button type="primary" @click="dialogVisible = true">新问卷</el-button>
+        </el-col>
+      </el-row>
+      <el-row>
+        <el-col :span="24">
+          <el-table
+            :data="tableData"
+            v-loading="loading"
+            style="width: 100%">
+            <el-table-column
+              prop="p_id"
+              label="ID"
+              width="100"
+              align="center">
+            </el-table-column>
+            <el-table-column
+              prop="title"
+              label="问卷标题"
+              min-width="800"
+              align="left">>
+            </el-table-column>
+            <el-table-column
+              width="200"
+              label="操作"
+              align="left">>
+              <template slot-scope="scope">
+                <el-button
+                  type="primary"
+                  icon="el-icon-edit"
+                  circle>
+                </el-button>
+                <el-button
+                  type="success"
+                  icon="el-icon-share"
+                  circle>
+                </el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </el-col>
+      </el-row>
     </el-row>
     <el-dialog
-      title="创建新问卷"
+      :title="form.text == '' ? '新问卷' : form.text"
       :visible.sync="dialogVisible"
       :lock-scroll="true"
       :close-on-click-modal="false"
@@ -64,7 +66,7 @@
           <el-form :model="form" style="margin-top: 40px;">
             <el-row v-if="activeStep === 0">
               <el-form-item label="问卷名称" :label-width="formLabelWidth">
-                <el-input v-model="form.name" auto-complete="off"></el-input>
+                <el-input v-model="form.text" auto-complete="off"></el-input>
               </el-form-item>
             </el-row>
             <el-row v-if="activeStep === 1">
@@ -102,6 +104,29 @@
                 </el-row>
               </el-form-item>
             </el-row>
+            <el-row v-if="activeStep === 3">
+              <el-form-item :label="(qIndex + 1) + '：'" :label-width="'25px'" v-for="(question, qIndex) in form.questions" v-bind:key="qIndex">
+                <el-row type="flex" justify="start" style="font-weight: 600;">
+                  {{question.text}}
+                </el-row>
+                <el-row>
+                  <el-form-item
+                    :label="number2Alphabet(oIndex) + '：'"
+                    :label-width="'25px'"
+                    v-for="(option, oIndex) in question.options" v-bind:key="oIndex"
+                    style="margin-top: 5px;">
+                    <el-row type="flex" justify="start">
+                      {{option.text}}
+                    </el-row>
+                  </el-form-item>
+                </el-row>
+              </el-form-item>
+              <el-row type="flex" justify="center">
+                <el-col :span="24">
+                  <el-button type="primary" @click="submit()" icon="el-icon-check">提交</el-button>
+                </el-col>
+              </el-row>
+            </el-row>
           </el-form>
         </el-col>
         <el-col :span="1">
@@ -111,7 +136,7 @@
         </el-col>
       </el-row>
     </el-dialog>
-  </el-row>
+  </div>
 </template>
 
 <script>
@@ -127,8 +152,14 @@ export default {
       cellStyles: {
         'text-align': 'left'
       },
+      formDefault: {
+        text: '',
+        questions: [{
+          options: []
+        }]
+      },
       form: {
-        name: '',
+        text: '',
         questions: [{
           options: []
         }]
@@ -141,7 +172,11 @@ export default {
   methods: {
     submit () {
       var _vm = this
-      _vm.dialogVisible = false
+      _vm.$axios.put('/questionnaire', _vm.form).then(function (result) {
+        _vm.form = _vm.formDefault
+        _vm.activeStep = 0
+        _vm.dialogVisible = false
+      })
     },
     forward () {
       this.activeStep += this.activeStep >= this.maxSteps ? 0 : 1
@@ -170,7 +205,7 @@ export default {
   },
   mounted () {
     var _vm = this
-    _vm.$axios.get(`/apis/questionnaire?currPage=1&pageSize=20`, {}).then(function (resp) {
+    _vm.$axios.get(`/questionnaire?currPage=1&pageSize=20`, {}).then(function (resp) {
       _vm.tableData = resp.data.data.content
       _vm.loading = false
     })
@@ -181,5 +216,9 @@ export default {
 <style>
 .el-select .el-input {
   width: 130px;
+}
+div#root {
+  height: 100%;
+  background-color: #ffffff;
 }
 </style>
