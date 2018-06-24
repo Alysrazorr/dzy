@@ -6,6 +6,7 @@
           <el-button type="primary" @click="dialogVisible = true">新问卷</el-button>
         </el-col>
       </el-row>
+      <br />
       <el-row>
         <el-col :span="24">
           <el-table
@@ -13,15 +14,21 @@
             v-loading="loading"
             style="width: 100%">
             <el-table-column
-              prop="p_id"
+              prop="domainId"
               label="ID"
               width="100"
               align="center">
             </el-table-column>
             <el-table-column
-              prop="title"
+              prop="text"
               label="问卷标题"
               min-width="800"
+              align="left">>
+            </el-table-column>
+            <el-table-column
+              prop="createTime"
+              label="创建时间"
+              width="200"
               align="left">>
             </el-table-column>
             <el-table-column
@@ -63,16 +70,16 @@
             <el-step title="步骤2" description="填写问卷题目"></el-step>
             <el-step title="步骤3" description="填写题目选项"></el-step>
           </el-steps>
-          <el-form :model="form" style="margin-top: 40px;">
+          <el-form :model="form" style="margin-top: 40px;" @submit.native.prevent>
             <el-row v-if="activeStep === 0">
-              <el-form-item label="问卷名称" :label-width="formLabelWidth">
-                <el-input v-model="form.text" auto-complete="off"></el-input>
+              <el-form-item>
+                <el-input v-model="form.text" auto-complete="off" placeholder="问卷名称"></el-input>
               </el-form-item>
             </el-row>
             <el-row v-if="activeStep === 1">
-              <el-form-item :label="'题目 ' + (index + 1)" :label-width="formLabelWidth" v-for="(question, index) in form.questions" v-bind:key="index">
-                <el-input v-model="question.text" auto-complete="off">
-                  <el-select v-model="question.type" slot="prepend" placeholder="类型">
+              <el-form-item v-for="(question, index) in form.questions" v-bind:key="index">
+                <el-input v-model="question.text" auto-complete="off" :placeholder="'题目 ' + (index + 1)">
+                  <el-select v-model="question.type" slot="prepend" placeholder="类型" style="width: 100px;">
                     <el-option label="单选" value="SINGLE"></el-option>
                     <el-option label="多选" value="MULTI"></el-option>
                     <el-option label="排序" value="SORT"></el-option>
@@ -87,17 +94,15 @@
               </el-row>
             </el-row>
             <el-row v-if="activeStep === 2">
-              <el-form-item :label="'题目 ' + (qIndex + 1)" :label-width="formLabelWidth" v-for="(question, qIndex) in form.questions" v-bind:key="qIndex">
-                <el-input v-model="question.text" auto-complete="off" readonly="readonly">
+              <el-form-item v-for="(question, qIndex) in form.questions" v-bind:key="qIndex">
+                <el-input v-model="question.text" auto-complete="off" readonly="readonly" :placeholder="'题目 ' + (qIndex + 1)">
                   <el-button type="danger" icon="el-icon-plus" circle @click="newOption(qIndex)" slot="append"></el-button>
                 </el-input>
                 <el-row>
                   <el-form-item
-                    :label="'选项 ' + number2Alphabet(oIndex)"
-                    :label-width="formLabelWidth"
                     v-for="(option, oIndex) in question.options" v-bind:key="oIndex"
                     style="margin-top: 5px;">
-                    <el-input v-model="option.text" auto-complete="off">
+                    <el-input v-model="option.text" auto-complete="off" :placeholder="'选项 ' + number2Alphabet(oIndex)" style="margin-left: 15px; width: calc(100% - 15px);">
                       <el-button type="danger" icon="el-icon-delete" circle @click="delOption(qIndex, oIndex)" slot="append"></el-button>
                     </el-input>
                   </el-form-item>
@@ -105,13 +110,13 @@
               </el-form-item>
             </el-row>
             <el-row v-if="activeStep === 3">
-              <el-form-item :label="(qIndex + 1) + '：'" :label-width="'25px'" v-for="(question, qIndex) in form.questions" v-bind:key="qIndex">
-                <el-row type="flex" justify="start" style="font-weight: 600;">
+              <el-form-item :label="(qIndex + 1) + '、'" :label-width="'25px'" v-for="(question, qIndex) in form.questions" v-bind:key="qIndex">
+                <el-row type="flex" justify="start" style="font-weight: 100; font-size: 18px;">
                   {{question.text}}
                 </el-row>
                 <el-row>
                   <el-form-item
-                    :label="number2Alphabet(oIndex) + '：'"
+                    :label="number2Alphabet(oIndex) + '、 '"
                     :label-width="'25px'"
                     v-for="(option, oIndex) in question.options" v-bind:key="oIndex"
                     style="margin-top: 5px;">
@@ -123,7 +128,7 @@
               </el-form-item>
               <el-row type="flex" justify="center">
                 <el-col :span="24">
-                  <el-button type="primary" @click="submit()" icon="el-icon-check">提交</el-button>
+                  <el-button type="primary" @click="submit()">提交</el-button>
                 </el-col>
               </el-row>
             </el-row>
@@ -176,6 +181,11 @@ export default {
         _vm.form = _vm.formDefault
         _vm.activeStep = 0
         _vm.dialogVisible = false
+        _vm.loading = true
+        _vm.$axios.get(`/questionnaire?currPage=1&pageSize=20`, {}).then(function (resp) {
+          _vm.tableData = resp.data.data
+          _vm.loading = false
+        })
       })
     },
     forward () {
@@ -203,17 +213,17 @@ export default {
       return alphabet[num]
     }
   },
-  mounted () {
+  beforeMount () {
     var _vm = this
     _vm.$axios.get(`/questionnaire?currPage=1&pageSize=20`, {}).then(function (resp) {
-      _vm.tableData = resp.data.data.content
+      _vm.tableData = resp.data.data
       _vm.loading = false
     })
   }
 }
 </script>
 
-<style>
+<style scoped>
 .el-select .el-input {
   width: 130px;
 }

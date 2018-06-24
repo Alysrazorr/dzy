@@ -31,12 +31,16 @@ const router = new Router({
 
 router.beforeEach((to, from, next) => {
   if (to.path !== '/login') {
-    if (store.state.token) {
+    if (to.path.startsWith('/questionnaire/')) {
       next()
     } else {
-      next({
-        path: '/login'
-      })
+      if (store.state.token) {
+        next()
+      } else {
+        next({
+          path: '/login'
+        })
+      }
     }
   } else {
     if (store.state.token) {
