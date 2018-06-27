@@ -7,7 +7,7 @@
             <el-form :model="loginForm">
               <br />
               <el-row justify="center">
-                <span style="font-size: 30px; font-family: '黑体'; ">典政院绩效咨询（深圳）有限公司</span>
+                <span style="font-size: 30px; font-family: '黑体'; line-height: 40px;">典政院绩效咨询（深圳）有限公司调查问卷管理系统</span>
               </el-row>
               <br />
               <br />
@@ -16,7 +16,7 @@
                   </el-input>
               </el-form-item>
               <el-form-item>
-                  <el-input type="input" v-model="loginForm.password" placeholder="密码">
+                  <el-input type="password" v-model="loginForm.password" placeholder="密码">
                   </el-input>
               </el-form-item>
               <el-button type="primary" style="width: 100%;" :loading="loading" @click="login()">登录系统</el-button>
@@ -43,10 +43,20 @@ export default {
     login () {
       const _vm = this
       _vm.$axios.get(`/security/login?username=${_vm.loginForm.username}&password=${_vm.loginForm.password}`).then(function (result) {
-        if (result.data.data.length) {
-          _vm.$store.commit('setToken', result.data.data)
-          _vm.$router.push('/')
+        if (!result.data.data) {
+          _vm.showError()
+        } else {
+          if (result.data.data.length) {
+            _vm.$store.commit('setToken', result.data.data)
+            _vm.$router.push('/')
+          }
         }
+      })
+    },
+    showError () {
+      this.$message({
+        message: '输入有误，请重新输入！',
+        type: 'danger'
       })
     }
   }

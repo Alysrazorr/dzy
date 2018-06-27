@@ -58,88 +58,82 @@
       :lock-scroll="true"
       :close-on-click-modal="false"
       width="80%">
-      <el-row>
-        <el-col :span="1">
-          <el-tooltip class="item" effect="dark" content="上一步" placement="top-start">
-            <el-button type="default" icon="el-icon-arrow-left" circle @click="backward()"></el-button>
-          </el-tooltip>
-        </el-col>
-        <el-col :span="22">
-          <el-steps :active="activeStep" finish-status="success" align-center>
-            <el-step title="步骤1" description="填写问卷名称"></el-step>
-            <el-step title="步骤2" description="填写问卷题目"></el-step>
-            <el-step title="步骤3" description="填写题目选项"></el-step>
-          </el-steps>
-          <el-form :model="form" style="margin-top: 40px;" @submit.native.prevent>
-            <el-row v-if="activeStep === 0">
-              <el-form-item>
-                <el-input v-model="form.text" auto-complete="off" placeholder="问卷名称"></el-input>
-              </el-form-item>
-            </el-row>
-            <el-row v-if="activeStep === 1">
-              <el-form-item v-for="(question, index) in form.questions" v-bind:key="index">
-                <el-input v-model="question.text" auto-complete="off" :placeholder="'题目 ' + (index + 1)">
-                  <el-select v-model="question.type" slot="prepend" placeholder="类型" style="width: 100px;">
-                    <el-option label="单选" value="SINGLE"></el-option>
-                    <el-option label="多选" value="MULTI"></el-option>
-                    <el-option label="排序" value="SORT"></el-option>
-                  </el-select>
-                  <el-button type="danger" icon="el-icon-delete" circle @click="delQuestion(index)" slot="append"></el-button>
+      <el-form :model="form" ref="form" label-width="100px">
+        <el-form-item prop="text" label="问卷标题" :rules="[{ required: true, message: '请输入问卷标题', trigger: 'blur' }]">
+          <el-input v-model="form.text" placeholder="问卷标题"></el-input>
+        </el-form-item>
+        <el-row
+          v-for="(question, qIndex) in form.questions"
+          :key="qIndex">
+          <el-row>
+            <el-col :span="20">
+              <el-form-item
+                :label="'题目 ' + (qIndex + 1)"
+                :prop="'questions.' + qIndex + '.text'"
+                :rules="{
+                  required: true, message: '题目不能为空', trigger: 'blur'
+                }"
+              >
+                <el-input v-model="question.text" placeholder="题目">
+                  <el-tooltip class="item" effect="dark" content="添加选项" placement="top" slot="append">
+                    <el-button @click.prevent="newOption(qIndex)" icon="el-icon-plus"></el-button>
+                  </el-tooltip>
+                  <el-tooltip class="item" effect="dark" content="删除题目" placement="top" slot="append">
+                    <el-button @click.prevent="delQuestion(qIndex)" icon="el-icon-delete"></el-button>
+                  </el-tooltip>
                 </el-input>
               </el-form-item>
-              <el-row type="flex" justify="center">
-                <el-col :span="24">
-                  <el-button type="primary" @click="newQuestion()" circle icon="el-icon-plus"></el-button>
-                </el-col>
-              </el-row>
-            </el-row>
-            <el-row v-if="activeStep === 2">
-              <el-form-item v-for="(question, qIndex) in form.questions" v-bind:key="qIndex">
-                <el-input v-model="question.text" auto-complete="off" readonly="readonly" :placeholder="'题目 ' + (qIndex + 1)">
-                  <el-button type="danger" icon="el-icon-plus" circle @click="newOption(qIndex)" slot="append"></el-button>
-                </el-input>
-                <el-row>
-                  <el-form-item
-                    v-for="(option, oIndex) in question.options" v-bind:key="oIndex"
-                    style="margin-top: 5px;">
-                    <el-input v-model="option.text" auto-complete="off" :placeholder="'选项 ' + number2Alphabet(oIndex)" style="margin-left: 15px; width: calc(100% - 15px);">
-                      <el-button type="danger" icon="el-icon-delete" circle @click="delOption(qIndex, oIndex)" slot="append"></el-button>
-                    </el-input>
-                  </el-form-item>
-                </el-row>
+            </el-col>
+            <el-col :span="4">
+              <el-form-item
+                :label="'类型'"
+                :prop="'questions.' + qIndex + '.type'"
+                :rules="{
+                  required: true, message: '类型不能为空', trigger: 'blur'
+                }"
+              >
+                <el-select v-model="question.type" placeholder="类型">
+                  <el-option label="单选" value="SINGLE"></el-option>
+                  <el-option label="多选" value="MULTI"></el-option>
+                  <el-option label="排序" value="SORT"></el-option>
+                </el-select>
               </el-form-item>
-            </el-row>
-            <el-row v-if="activeStep === 3">
-              <el-form-item :label="(qIndex + 1) + '、'" :label-width="'25px'" v-for="(question, qIndex) in form.questions" v-bind:key="qIndex">
-                <el-row type="flex" justify="start" style="font-weight: 100; font-size: 18px;">
-                  {{question.text}}
-                </el-row>
-                <el-row>
-                  <el-form-item
-                    :label="number2Alphabet(oIndex) + '、 '"
-                    :label-width="'25px'"
-                    v-for="(option, oIndex) in question.options" v-bind:key="oIndex"
-                    style="margin-top: 5px;">
-                    <el-row type="flex" justify="start">
-                      {{option.text}}
-                    </el-row>
-                  </el-form-item>
-                </el-row>
+            </el-col>
+          </el-row>
+          <el-row
+            v-for="(option, oIndex) in question.options"
+            :key="oIndex" :gutter="15">
+            <el-col :span="19" :offset="1">
+              <el-form-item
+                :label="'选项 ' + number2Alphabet(oIndex)"
+                :prop="'questions.' + qIndex + '.options.' + oIndex + '.text'"
+                :rules="{
+                  required: true, message: '内容不能为空', trigger: 'blur'
+                }"
+              >
+                <el-input v-model="option.text" placeholder="选项内容"></el-input>
               </el-form-item>
-              <el-row type="flex" justify="center">
-                <el-col :span="24">
-                  <el-button type="primary" @click="submit()">提交</el-button>
-                </el-col>
-              </el-row>
-            </el-row>
-          </el-form>
-        </el-col>
-        <el-col :span="1">
-          <el-tooltip class="item" effect="dark" content="下一步" placement="top-start">
-            <el-button type="default" icon="el-icon-arrow-right" circle @click="forward()"></el-button>
-          </el-tooltip>
-        </el-col>
-      </el-row>
+            </el-col>
+            <el-col :span="4">
+              <el-form-item
+                :label-width="'0px'"
+                :prop="'questions.' + qIndex + '.options.' + oIndex + '.weights'"
+                :rules="[
+                  { required: true, message: '权重不能为空'},
+                  { type: 'number', message: '权重必须为数字值'}
+                ]"
+              >
+                <el-input v-model.number="option.weights" placeholder="权重"></el-input>
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </el-row>
+        <el-form-item>
+          <el-button type="primary" @click="submitForm('form')">提交</el-button>
+          <el-button @click="newQuestion">新题目</el-button>
+          <el-button @click="resetForm('form')">重置</el-button>
+        </el-form-item>
+      </el-form>
     </el-dialog>
   </div>
 </template>
@@ -157,42 +151,38 @@ export default {
       cellStyles: {
         'text-align': 'left'
       },
-      formDefault: {
-        text: '',
-        questions: [{
-          options: []
-        }]
-      },
       form: {
         text: '',
         questions: [{
           options: []
         }]
-      },
-      formLabelWidth: '120px',
-      activeStep: 0,
-      maxSteps: 3
+      }
     }
   },
   methods: {
     submit () {
       var _vm = this
       _vm.$axios.put('/questionnaire', _vm.form).then(function (result) {
-        _vm.form = _vm.formDefault
-        _vm.activeStep = 0
         _vm.dialogVisible = false
         _vm.loading = true
-        _vm.$axios.get(`/questionnaire?currPage=1&pageSize=20`, {}).then(function (resp) {
+        _vm.$axios.get(`/questionnaire?currPage=1&pageSize=20`).then(function (resp) {
           _vm.tableData = resp.data.data
           _vm.loading = false
         })
       })
     },
-    forward () {
-      this.activeStep += this.activeStep >= this.maxSteps ? 0 : 1
+    submitForm (formName) {
+      var _vm = this
+      this.$refs[formName].validate((valid) => {
+        if (valid) {
+          _vm.submit()
+        } else {
+          return false
+        }
+      })
     },
-    backward () {
-      this.activeStep -= this.activeStep > 0 ? 1 : 0
+    resetForm (formName) {
+      this.$refs[formName].resetFields()
     },
     newQuestion () {
       this.form.questions.push({
@@ -203,7 +193,9 @@ export default {
       this.form.questions.splice(index, 1)
     },
     newOption (qIndex) {
-      this.form.questions[qIndex].options.push({})
+      this.form.questions[qIndex].options.push({
+        weights: 0
+      })
     },
     delOption (qIndex, oIndex) {
       this.form.questions[qIndex].options.splice(oIndex, 1)
