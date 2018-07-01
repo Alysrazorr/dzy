@@ -55,7 +55,7 @@
           </el-col>
         </el-row>
         <el-form-item prop="guide" label="答题说明">
-          <el-input type="textarea" v-model="form.guide" placeholder="答题说明" :style="`font-family: 'Microsoft YaHei';`"></el-input>
+          <el-input type="textarea" v-model="form.guide" placeholder="答题说明"></el-input>
         </el-form-item>
         <el-row
           v-for="(question, qIndex) in form.questions"

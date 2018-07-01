@@ -1,9 +1,10 @@
 <template>
   <div id="root">
     <h1 style="font-weight: 100;">{{questionnaire.text}}</h1>
-    <p style="text-indent: 2em; text-align: justify;">{{questionnaire.toast}}</p>
+    <p style="text-indent: 2em; text-align: justify;">{{questionnaire.preface}}</p>
     <h5 style="text-align: right; line-height: 1em;">{{questionnaire.invoicing}}</h5>
-    <h5 style="text-align: right; line-height: 1em;">{{questionnaire.createTime}}</h5>
+    <h5 style="text-align: right; line-height: 1em;">{{questionnaire.date}}</h5>
+    <p style="text-align: justify; line-height: 1.5em;"><strong>答题说明：</strong><small>{{questionnaire.guide}}</small></p>
     <el-row v-for="(question, qIndex) in questionnaire.questions" v-bind:key="qIndex">
       <el-row style="flex" justify="start">
         <div v-if="question.type === 'SINGLE'">
@@ -55,7 +56,7 @@ export default {
       })
     },
     number2Alphabet (num) {
-      return this.$utils.number2Alphabet(num)
+      return this.$utils.numberToAlphabet(num)
     }
   },
   beforeMount: function () {
