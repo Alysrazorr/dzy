@@ -1,25 +1,34 @@
 <template>
   <div id="root">
     <h1 style="font-weight: 100;">{{questionnaire.text}}</h1>
-    <h5>{{questionnaire.createTime}}</h5>
+    <p style="text-indent: 2em; text-align: justify;">{{questionnaire.toast}}</p>
+    <h5 style="text-align: right; line-height: 1em;">{{questionnaire.invoicing}}</h5>
+    <h5 style="text-align: right; line-height: 1em;">{{questionnaire.createTime}}</h5>
     <el-row v-for="(question, qIndex) in questionnaire.questions" v-bind:key="qIndex">
       <el-row style="flex" justify="start">
-        <el-col :span="24">{{question.text}}</el-col>
-
         <div v-if="question.type === 'SINGLE'">
-          <!-- <el-radio-group v-model="answers[qIndex].answer" style="font-size: 16px; font-weight: 100; text-align: left;">
-            <el-radio :label="oIndex" v-for="(option, oIndex) in question.options" v-bind:key="oIndex"
-              style="">{{option.text}}</el-radio>
-          </el-radio-group> -->
-          <el-checkbox-group v-model="answers[qIndex].answer">
-            <el-checkbox :label="oIndex" v-for="(option, oIndex) in question.options" v-bind:key="oIndex">{{option.text}}</el-checkbox>
-          </el-checkbox-group>
-          <!-- <el-row v-for="(option, oIndex) in question.options" v-bind:key="oIndex">
-            {{option.text}}
-          </el-row> -->
+          <el-row style="text-align: left;"><h4>{{(qIndex + 1) + '. ' + question.text + '？'}}</h4></el-row>
+          <el-radio-group v-model="answers[qIndex]">
+            <el-radio-button v-for="(option, oIndex) in question.options" :key="oIndex" :label="number2Alphabet(oIndex) + '. ' + option.text"></el-radio-button>
+          </el-radio-group>
         </div>
-
+        <div v-if="question.type === 'MULTI'">
+          <el-row style="text-align: left;"><h4>{{(qIndex + 1) + '. ' + question.text + '？[多选]'}}</h4></el-row>
+          <el-checkbox-group v-model="answers[qIndex]">
+            <el-checkbox-button v-for="(option, oIndex) in question.options" :label="number2Alphabet(oIndex) + '. ' + option.text" :key="oIndex"></el-checkbox-button>
+          </el-checkbox-group>
+        </div>
+        <div v-if="question.type === 'FILL_IN'">
+          <el-row style="text-align: left;"><h4>{{(qIndex + 1) + '. ' + question.text + '？[填写]'}}</h4></el-row>
+          <el-input v-model="answers[qIndex]" type="textarea"></el-input>
+        </div>
       </el-row>
+    </el-row>
+    <el-row style="margin-top: 20px; font-weight: 100;">
+      <el-button type="primary" @click="submit('form')">提交答卷</el-button>
+    </el-row>
+    <el-row style="margin-top: 20px; font-weight: 100;">
+      <h5 style="font-weight: 100;">典政院绩效咨询（深圳）有限公司提供技术支持</h5>
     </el-row>
   </div>
 </template>
@@ -32,11 +41,32 @@ export default {
       answers: []
     }
   },
+  methods: {
+    submit () {
+      var _vm = this
+      this.$axios.put(`/answer/${_vm.$route.params.id}`, _vm.answers).then(resp => {
+        _vm.$message({
+          message: '提交成功！',
+          type: 'success'
+        })
+        setTimeout(function () {
+          _vm.$router.push('/success')
+        }, 2000)
+      })
+    },
+    number2Alphabet (num) {
+      return this.$utils.number2Alphabet(num)
+    }
+  },
   beforeMount: function () {
     var _vm = this
-    this.$axios.get(`/questionnaire/${_vm.$route.params.id}`).then(resp => {
+    _vm.$axios.get(`/questionnaire/${_vm.$route.params.id}`).then(resp => {
       for (let i = 0; i < resp.data.data.questions.length; i++) {
-        _vm.answers.push({})
+        if (resp.data.data.questions[i]['type'] === 'FILL_IN') {
+          _vm.answers[i] = ''
+        } else {
+          _vm.answers[i] = []
+        }
       }
       _vm.questionnaire = resp.data.data
     })

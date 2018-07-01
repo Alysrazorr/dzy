@@ -1,5 +1,5 @@
 <template>
-  <div id="page">
+  <div id="root">
     <div id="pad">
       <div id="pad2">
         <el-row type="flex">
@@ -63,8 +63,8 @@ export default {
 }
 </script>
 
-<style>
-div#page {
+<style scoped>
+div#root {
   height: 100%;
   width: 100%;
   display: flex;
@@ -78,7 +78,6 @@ div#pad {
   border-radius: 6px;
   background-color: rgba(255,255,255,0.1);
 }
-
 div#pad > div#pad2 {
   padding: 25px;
   border-radius: 6px;

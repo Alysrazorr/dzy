@@ -5,6 +5,7 @@ import store from '@/store'
 import Login from '@/views/Login'
 import QuestionnaireList from '@/views/QuestionnaireList'
 import Questionnaire from '@/views/Questionnaire'
+import Success from '@/views/Success'
 
 Vue.use(Router)
 
@@ -25,13 +26,17 @@ const router = new Router({
     {
       path: '/questionnaire/:id',
       component: Questionnaire
+    },
+    {
+      path: '/success',
+      component: Success
     }
   ]
 })
 
 router.beforeEach((to, from, next) => {
   if (to.path !== '/login') {
-    if (to.path.startsWith('/questionnaire/')) {
+    if (to.path.startsWith('/questionnaire/') || to.path.startsWith('/answer') || to.path.startsWith('/success')) {
       next()
     } else {
       if (store.state.token) {
