@@ -29,7 +29,7 @@
       <el-button type="primary" @click="submit('form')">提交答卷</el-button>
     </el-row>
     <el-row style="margin-top: 20px; font-weight: 100;">
-      <h5 style="font-weight: 100;">典政院绩效咨询（深圳）有限公司提供技术支持</h5>
+      <h5 style="font-weight: 100;">{{$consts.company + ' 提供技术支持'}}</h5>
     </el-row>
   </div>
 </template>
