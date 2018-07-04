@@ -32,15 +32,15 @@
       width="80%"
       >
       <el-form :model="form" ref="form" label-width="100px">
-        <el-form-item prop="text" label="标题" :rules="[{ required: true, message: '请输入标题', trigger: 'blur' }]">
+        <el-form-item prop="text" label="标题" :rules="[{ required: true, message: '请输入标题', trigger: 'change' }]">
           <el-input v-model="form.text" placeholder="标题"></el-input>
         </el-form-item>
-        <el-form-item prop="preface" label="卷首语" :rules="[{ required: true, message: '请输入卷首语', trigger: 'blur' }]">
+        <el-form-item prop="preface" label="卷首语" :rules="[{ required: true, message: '请输入卷首语', trigger: 'change' }]">
           <el-input type="textarea" v-model="form.preface" placeholder="卷首语"></el-input>
         </el-form-item>
         <el-row>
           <el-col :span="16">
-            <el-form-item prop="invoicing" label="落款" :rules="[{ required: true, message: '请输入落款', trigger: 'blur' }]">
+            <el-form-item prop="invoicing" label="落款" :rules="[{ required: true, message: '请输入落款', trigger: 'change' }]">
               <el-input v-model="form.invoicing" placeholder="落款"></el-input>
             </el-form-item>
           </el-col>
@@ -62,7 +62,7 @@
               <el-form-item
                 :label="'题目 ' + (qIndex + 1)"
                 :prop="'questions.' + qIndex + '.text'"
-                :rules="{ required: true, message: '题目不能为空', trigger: 'blur' }"
+                :rules="{ required: true, message: '题目不能为空', trigger: 'change' }"
                 >
                 <el-input v-model="question.text" placeholder="题目">
                   <el-tooltip class="item" effect="dark" content="添加选项" placement="top" slot="append">
@@ -79,7 +79,7 @@
               <el-form-item
                 :label="'题目类型'"
                 :prop="'questions.' + qIndex + '.type'"
-                :rules="{ required: true, message: '类型不能为空', trigger: 'blur' }"
+                :rules="{ required: true, message: '类型不能为空', trigger: 'change' }"
                 >
                 <el-select v-model="question.type" placeholder="类型">
                     <el-option label="单选" value="SINGLE"></el-option>
@@ -110,7 +110,7 @@
               <el-form-item
                 :label="'选项 ' + number2Alphabet(oIndex)"
                 :prop="'questions.' + qIndex + '.options.' + oIndex + '.text'"
-                :rules="{ required: true, message: '内容不能为空', trigger: 'blur' }"
+                :rules="{ required: true, message: '内容不能为空', trigger: 'change' }"
                 >
                 <el-input v-model="option.text" placeholder="选项内容">
                   <el-tooltip class="item" effect="dark" content="删除选项" placement="top" slot="append">
