@@ -28,25 +28,26 @@
       :lock-scroll="true"
       :close-on-click-modal="false"
       :visible.sync="visible.formDialog"
-      v-loading="loading.form"
+      v-loading="loading.formDialog"
+      :before-close="beforeEditModalClose"
       width="80%"
       >
       <el-form :model="form" ref="form" label-width="100px">
-        <el-form-item prop="text" label="标题" :rules="[{ required: true, message: '请输入标题', trigger: 'change' }]">
+        <el-form-item prop="text" label="标题" :rules="[{ required: true, message: '请输入标题', trigger: 'blur' }]">
           <el-input v-model="form.text" placeholder="标题"></el-input>
         </el-form-item>
-        <el-form-item prop="preface" label="卷首语" :rules="[{ required: true, message: '请输入卷首语', trigger: 'change' }]">
+        <el-form-item prop="preface" label="卷首语" :rules="[{ required: true, message: '请输入卷首语', trigger: 'blur' }]">
           <el-input type="textarea" v-model="form.preface" placeholder="卷首语"></el-input>
         </el-form-item>
         <el-row>
           <el-col :span="16">
-            <el-form-item prop="invoicing" label="落款" :rules="[{ required: true, message: '请输入落款', trigger: 'change' }]">
+            <el-form-item prop="invoicing" label="落款" :rules="[{ required: true, message: '请输入落款', trigger: 'blur' }]">
               <el-input v-model="form.invoicing" placeholder="落款"></el-input>
             </el-form-item>
           </el-col>
           <el-col :span="8">
             <el-form-item label="日期" required>
-              <el-form-item prop="date" :rules="[{ type: 'string', required: true, message: '请输入日期', trigger: 'change' }]">
+              <el-form-item prop="date" :rules="[{ type: 'string', required: true, message: '请输入日期', trigger: 'blur' }]">
                 <el-date-picker v-model="form.date" type="date" placeholder="选择日期" format="yyyy 年 MM 月 dd 日" value-format="yyyy-MM-dd" style="width: 100%;"></el-date-picker>
               </el-form-item>
             </el-form-item>
@@ -62,10 +63,10 @@
               <el-form-item
                 :label="'题目 ' + (qIndex + 1)"
                 :prop="'questions.' + qIndex + '.text'"
-                :rules="{ required: true, message: '题目不能为空', trigger: 'change' }"
+                :rules="{ required: true, message: '题目不能为空', trigger: 'blur' }"
                 >
                 <el-input v-model="question.text" placeholder="题目">
-                  <el-tooltip class="item" effect="dark" content="添加选项" placement="top" slot="append">
+                  <el-tooltip class="item" effect="dark" content="添加选项" placement="top" slot="append" v-if="question.type === 'SINGLE'">
                     <el-button @click.prevent="newOption(qIndex)" icon="el-icon-plus"></el-button>
                   </el-tooltip>
                   <el-tooltip class="item" effect="dark" content="删除题目" placement="top" slot="append">
@@ -79,7 +80,7 @@
               <el-form-item
                 :label="'题目类型'"
                 :prop="'questions.' + qIndex + '.type'"
-                :rules="{ required: true, message: '类型不能为空', trigger: 'change' }"
+                :rules="{ required: true, message: '类型不能为空', trigger: 'blur' }"
                 >
                 <el-select v-model="question.type" placeholder="类型">
                     <el-option label="单选" value="SINGLE"></el-option>
@@ -110,7 +111,7 @@
               <el-form-item
                 :label="'选项 ' + number2Alphabet(oIndex)"
                 :prop="'questions.' + qIndex + '.options.' + oIndex + '.text'"
-                :rules="{ required: true, message: '内容不能为空', trigger: 'change' }"
+                :rules="{ required: true, message: '内容不能为空', trigger: 'blur' }"
                 >
                 <el-input v-model="option.text" placeholder="选项内容">
                   <el-tooltip class="item" effect="dark" content="删除选项" placement="top" slot="append">
@@ -141,6 +142,7 @@
       :lock-scroll="true"
       :close-on-click-modal="false"
       :visible.sync="visible.statisticsDialog"
+      v-loading="loading.statisticsDialog"
       width="80%"
       >
       <el-row>
@@ -316,15 +318,6 @@ export default {
     number2Alphabet (num) {
       return this.$utils.numberToAlphabet(num)
     },
-    showEditModal (row) {
-      var _vm = this
-      _vm.loading.formDialog = true
-      _vm.visible.formDialog = true
-      _vm.$axios.get(`/questionnaire/${row.domainId}`).then(resp => {
-        _vm.loading.formDialog = false
-        _vm.form = resp.data.data
-      })
-    },
     getList (currPage, pageSize) {
       var _vm = this
       _vm.loading.table = true
@@ -332,6 +325,19 @@ export default {
         _vm.table = resp.data.data
         _vm.loading.table = false
       })
+    },
+    showEditModal (row) {
+      var _vm = this
+      _vm.visible.formDialog = true
+      _vm.loading.formDialog = true
+      _vm.$axios.get(`/questionnaire/${row.domainId}`).then(resp => {
+        _vm.loading.formDialog = false
+        _vm.form = resp.data.data
+      })
+    },
+    beforeEditModalClose (done) {
+      this.reset('form')
+      done()
     },
     showStatisticsModal (row) {
       var _vm = this
