@@ -28,11 +28,10 @@
       :lock-scroll="true"
       :close-on-click-modal="false"
       :visible.sync="visible.formDialog"
-      v-loading="loading.formDialog"
       :before-close="beforeEditModalClose"
       width="80%"
       >
-      <el-form :model="form" ref="form" label-width="100px">
+      <el-form :model="form" ref="form" label-width="100px" v-loading="loading.formDialog">
         <el-form-item prop="text" label="标题" :rules="[{ required: true, message: '请输入标题', trigger: 'blur' }]">
           <el-input v-model="form.text" placeholder="标题"></el-input>
         </el-form-item>
@@ -66,10 +65,10 @@
                 :rules="{ required: true, message: '题目不能为空', trigger: 'blur' }"
                 >
                 <el-input v-model="question.text" placeholder="题目">
-                  <el-tooltip class="item" effect="dark" content="添加选项" placement="top" slot="append" v-if="question.type === 'SINGLE'">
+                  <el-tooltip class="item" effect="dark" answerSheetJsonArray="添加选项" placement="top" slot="append" v-if="question.type === 'SINGLE'">
                     <el-button @click.prevent="newOption(qIndex)" icon="el-icon-plus"></el-button>
                   </el-tooltip>
-                  <el-tooltip class="item" effect="dark" content="删除题目" placement="top" slot="append">
+                  <el-tooltip class="item" effect="dark" answerSheetJsonArray="删除题目" placement="top" slot="append">
                     <el-button @click.prevent="delQuestion(qIndex, question.text)" icon="el-icon-delete"></el-button>
                   </el-tooltip>
                 </el-input>
@@ -91,7 +90,7 @@
               </el-form-item>
             </el-col>
           </el-row>
-          <el-row v-if="question.type === 'SINGLE'">
+          <el-row v-if="question.type === 'SINGLE' || question.type === 'MULTI'">
             <el-col :span="23" :offset="1" :style="'text-align: left;'">
               <el-form-item
                 :label="'计算均值'"
@@ -114,7 +113,7 @@
                 :rules="{ required: true, message: '内容不能为空', trigger: 'blur' }"
                 >
                 <el-input v-model="option.text" placeholder="选项内容">
-                  <el-tooltip class="item" effect="dark" content="删除选项" placement="top" slot="append">
+                  <el-tooltip class="item" effect="dark" answerSheetJsonArray="删除选项" placement="top" slot="append">
                     <el-button @click.prevent="delOption(qIndex, oIndex, option.text)" icon="el-icon-delete"></el-button>
                   </el-tooltip>
                 </el-input>
@@ -142,51 +141,44 @@
       :lock-scroll="true"
       :close-on-click-modal="false"
       :visible.sync="visible.statisticsDialog"
-      v-loading="loading.statisticsDialog"
       width="80%"
       >
       <el-row>
-        <h1>{{`总平均分：${!questionnaire.avg ? 0 : questionnaire.avg}`}}</h1>
+        <h1>{{`总平均分：${fixedFloat(!questionnaire.avg ? 0 : questionnaire.avg)}`}}</h1>
       </el-row>
       <el-row
         v-for="(question, qIndex) in questionnaire.questions"
-        v-if="question.type === 'SINGLE' || question.type === 'MULTI'"
+        v-if="(question.type === 'SINGLE' || question.type === 'MULTI') && question.calcAvg"
+        v-loading="loading.statisticsDialog"
         :key="qIndex"
         :class="'question-class'"
         >
         <el-row>
           <h1 :style="'font-weight: 100; padding: 0 10px;'">{{question.text}}</h1>
         </el-row>
-        <el-row type="flex">
-          <el-col :span="16">
-            <el-row
-              type="flex"
-              :gutter="10"
-              :style="'margin: 10px; margin-top: 0;'"
-              >
-              <el-col :class="'option-header-class'" :span="16"><div>选项</div></el-col>
-              <el-col :class="'option-header-class'" :span="2"><div>权重</div></el-col>
-              <el-col :class="'option-header-class'" :span="2"><div>票数</div></el-col>
-              <el-col :class="'option-header-class'" :span="2"><div>占比</div></el-col>
-              <el-col :class="'option-header-class'" :span="2"><div>分值</div></el-col>
-            </el-row>
-            <el-row
-              type="flex"
-              v-for="(option, oIndex) in question.options"
-              :key="oIndex"
-              :gutter="10"
-              :style="'margin: 10px;'"
-              >
-              <el-col :class="'option-class'" :span="16"><div>{{option.text}}</div></el-col>
-              <el-col :class="'option-class'" :span="2"><div>{{option.weights}}</div></el-col>
-              <el-col :class="'option-class'" :span="2"><div>{{option.count === 0 || option.count === NaN ? '-' : option.count}}</div></el-col>
-              <el-col :class="'option-class'" :span="2"><div>{{option.percent === '0.00' ? '-' : option.percent}}</div></el-col>
-              <el-col :class="'option-class'" :span="2"><div>{{option.score === '0.00' ? '-' : option.score}}</div></el-col>
-            </el-row>
-          </el-col>
-          <el-col :span="8">
-            <div :id="`pie_${question.rank}`" :style="'height: 100%;'"></div>
-          </el-col>
+        <el-row
+          type="flex"
+          :gutter="10"
+          :style="'margin: 10px; margin-top: 0;'"
+          >
+          <el-col :class="'option-header-class'" :span="16"><div>选项</div></el-col>
+          <el-col :class="'option-header-class'" :span="2"><div>权重</div></el-col>
+          <el-col :class="'option-header-class'" :span="2"><div>票数</div></el-col>
+          <el-col :class="'option-header-class'" :span="2"><div>占比</div></el-col>
+          <el-col :class="'option-header-class'" :span="2"><div>分值</div></el-col>
+        </el-row>
+        <el-row
+          type="flex"
+          v-for="(option, oIndex) in question.options"
+          :key="oIndex"
+          :gutter="10"
+          :style="'margin: 10px;' + (option.text === '总计' || option.text === '平均分' ? 'color: red;' : '')"
+          >
+          <el-col :class="'option-class'" :span="16"><div>{{option.text}}</div></el-col>
+          <el-col :class="'option-class'" :span="2"><div>{{option.weights}}</div></el-col>
+          <el-col :class="'option-class'" :span="2"><div>{{fixedFloat(option.count === 0 || option.count === NaN ? '-' : option.count)}}</div></el-col>
+          <el-col :class="'option-class'" :span="2"><div>{{fixedFloat(option.percent === '0.00' ? '-' : option.percent)}}</div></el-col>
+          <el-col :class="'option-class'" :span="2"><div>{{fixedFloat(option.score === '0.00' ? '-' : option.score)}}</div></el-col>
         </el-row>
       </el-row>
     </el-dialog>
@@ -221,7 +213,9 @@ export default {
           type: 'SINGLE',
           calcAvg: true,
           options: [{
-            weights: 1
+            text: '不清楚',
+            weights: 0,
+            readonly: true
           }]
         }]
       },
@@ -236,7 +230,9 @@ export default {
           type: 'SINGLE',
           calcAvg: true,
           options: [{
-            weights: 1
+            text: '不清楚',
+            weights: 0,
+            readonly: true
           }]
         }]
       }
@@ -280,7 +276,8 @@ export default {
         type: 'SINGLE',
         calcAvg: true,
         options: [{
-          weights: 1
+          text: '不清楚',
+          weights: 0
         }]
       })
     },
@@ -298,9 +295,16 @@ export default {
       })
     },
     newOption (qIndex) {
-      this.form.questions[qIndex].options.push({
-        weights: 1
-      })
+      let options = this.form.questions[qIndex].options
+      if (options[options.length - 1].text === '不清楚') {
+        options.splice(-1, 0, {
+          weights: 1
+        })
+      } else {
+        options.push({
+          weights: 1
+        })
+      }
     },
     delOption (qIndex, oIndex, text) {
       this.$confirm(`确认删除 ${typeof text !== 'undefined' ? text : '本选项'} 吗？`, '警告', {
@@ -339,37 +343,48 @@ export default {
       this.reset('form')
       done()
     },
+    fixedFloat (num) {
+      return typeof num !== 'number' ? num : num.toFixed(2)
+    },
     showStatisticsModal (row) {
       var _vm = this
       _vm.loading.statisticsDialog = true
       _vm.visible.statisticsDialog = true
+
       _vm.$axios.get(`/answer/${row.domainId}`).then(resp => {
-        const contents = resp.data.data
+        const allAnswerSheetJsonArray = resp.data.data // 获取答卷数据
 
         _vm.$axios.get(`/questionnaire/${row.domainId}`).then(resp => {
-          _vm.loading.statisticsDialog = false
           _vm.questionnaire = resp.data.data
+          let answerSheetCount = allAnswerSheetJsonArray.length
 
-          for (let content of contents) {
-            let answer = JSON.parse(content)
-            for (let questionIndex in _vm.questionnaire.questions) {
-              let questionAnswer = answer[questionIndex]
-              if (typeof questionAnswer === 'string') {
-                for (let optionIndex in _vm.questionnaire.questions[questionIndex].options) {
-                  let option = _vm.questionnaire.questions[questionIndex].options[optionIndex]
-                  option.count = option.count === null || option.count === undefined ? 0 : option.count
-                  if (questionAnswer === `${_vm.number2Alphabet(optionIndex)}. ${option.text}`) {
-                    option.count++
+          for (let answerSheetJsonArray of allAnswerSheetJsonArray) { // 遍历所有答卷
+            let answerSheet = JSON.parse(answerSheetJsonArray) // 获取一份答卷，转换成Array
+
+            for (let qIndex in _vm.questionnaire.questions) { // 遍历一份问卷中每个问题
+              let question = _vm.questionnaire.questions[qIndex]
+              let questionAnswer = answerSheet[qIndex] // 获取一份答卷中的一个问题的答案
+              let questionOptions = question.options
+
+              if (question.calcAvg) {
+                if (typeof questionAnswer === 'string') {
+                  for (let oIndex in questionOptions) {
+                    let option = questionOptions[oIndex]
+                    option.count = option.count === null || option.count === undefined ? 0 : option.count
+                    if (questionAnswer === `${_vm.number2Alphabet(oIndex)}. ${option.text}`) {
+                      option.count++
+                    }
                   }
                 }
-              }
-              if (Array.isArray(questionAnswer)) {
-                for (let qa of questionAnswer) {
-                  for (let optionIndex in _vm.questionnaire.questions[questionIndex].options) {
-                    let option = _vm.questionnaire.questions[questionIndex].options[optionIndex]
-                    option.count = option.count === null || option.count === undefined ? 0 : option.count
-                    if (qa === `${_vm.number2Alphabet(optionIndex)}. ${option.text}`) {
-                      option.count++
+
+                if (Array.isArray(questionAnswer)) {
+                  for (let subQuestionAnswer of questionAnswer) {
+                    for (let oIndex in questionOptions) {
+                      let option = questionOptions[oIndex]
+                      option.count = option.count === null || option.count === undefined ? 0 : option.count
+                      if (subQuestionAnswer === `${_vm.number2Alphabet(oIndex)}. ${option.text}`) {
+                        option.count++
+                      }
                     }
                   }
                 }
@@ -378,103 +393,60 @@ export default {
           }
 
           for (let question of _vm.questionnaire.questions) {
-            question.count = 0
-            for (let option of question.options) {
-              question.count += option.count
+            if (question.calcAvg) {
+              question.count = 0
+              for (let option of question.options) {
+                if (option.weights !== 0) {
+                  question.count += option.count
+                }
+              }
             }
           }
           for (let question of _vm.questionnaire.questions) {
-            question.score = 0
-            for (let option of question.options) {
-              option.percent = (option.count * 100 / question.count).toFixed(2)
-              option.score = (option.weights * option.percent).toFixed(2)
-              question.score += parseInt(option.score)
+            if (question.calcAvg) {
+              question.score = 0
+              question.percent = 0
+              for (let option of question.options) {
+                if (option.weights !== 0) {
+                  option.percent = option.count * 100 / question.count
+                  option.score = option.weights * option.percent
+                  question.score += option.score
+                  question.percent += option.percent
+                }
+              }
             }
           }
 
           _vm.questionnaire.avg = 0
           _vm.questionnaire.avgCount = 0
-          for (let question of _vm.questionnaire.questions) {
-            if (question.type === 'SINGLE' || question.type === 'MULTI') {
-              let avg = {
-                text: '平均分',
-                weights: '-',
-                count: '-',
-                percent: '-',
-                score: (question.score / question.options.length).toFixed(2)
+          for (let qIndex in _vm.questionnaire.questions) {
+            let question = _vm.questionnaire.questions[qIndex]
+            if (question.calcAvg) {
+              if (question.type === 'SINGLE' || question.type === 'MULTI') {
+                let avg = {
+                  text: '平均分',
+                  weights: '-',
+                  count: '-',
+                  percent: '-',
+                  score: question.score / question.options.length
+                }
+                let sum = {
+                  text: '总计',
+                  weights: '-',
+                  count: question.count === answerSheetCount ? question.count : `${question.count}/${answerSheetCount}`,
+                  percent: question.count === answerSheetCount ? 100 : question.count * 100 / answerSheetCount,
+                  score: '-'
+                }
+                _vm.questionnaire.avg += avg.score
+                _vm.questionnaire.avgCount++
+                question.options.push(sum)
+                question.options.push(avg)
               }
-              question.options.push(avg)
-              _vm.form.avg += parseInt(avg.score)
-              _vm.form.avgCount++
-
-              var chart = _vm.$echarts.init(document.getElementById(`pie_${question.rank}`))
-              chart.setOption({
-                backgroundColor: '#2c343c',
-                title: {
-                  text: 'Customized Pie',
-                  left: 'center',
-                  top: 20,
-                  textStyle: {
-                    color: '#ccc'
-                  }
-                },
-                tooltip: {
-                  trigger: 'item',
-                  formatter: '{a} <br/>{b} : {c} ({d}%)'
-                },
-                visualMap: {
-                  show: false,
-                  min: 80,
-                  max: 600,
-                  inRange: {
-                    colorLightness: [0, 1]
-                  }
-                },
-                series: [{
-                  name: '访问来源',
-                  type: 'pie',
-                  radius: '55%',
-                  center: ['50%', '50%'],
-                  data: [{value: 335, name: '直接访问'},
-                    {value: 310, name: '邮件营销'},
-                    {value: 274, name: '联盟广告'},
-                    {value: 235, name: '视频广告'},
-                    {value: 400, name: '搜索引擎'}].sort(function (a, b) { return a.value - b.value }),
-                  roseType: 'radius',
-                  label: {
-                    normal: {
-                      textStyle: {
-                        color: 'rgba(255, 255, 255, 0.3)'
-                      }
-                    }
-                  },
-                  labelLine: {
-                    normal: {
-                      lineStyle: {
-                        color: 'rgba(255, 255, 255, 0.3)'
-                      },
-                      smooth: 0.2,
-                      length: 10,
-                      length2: 20
-                    }
-                  },
-                  itemStyle: {
-                    normal: {
-                      color: '#c23531',
-                      shadowBlur: 200,
-                      shadowColor: 'rgba(0, 0, 0, 0.5)'
-                    }
-                  },
-                  animationType: 'scale',
-                  animationEasing: 'elasticOut',
-                  animationDelay: function (idx) {
-                    return Math.random() * 200
-                  }
-                }]
-              })
             }
           }
-          _vm.questionnaire.avg = (_vm.questionnaire.avg / _vm.questionnaire.avgCount).toFixed(2)
+          _vm.questionnaire.avg = _vm.questionnaire.avg / _vm.questionnaire.avgCount
+
+          _vm.loading.statisticsDialog = false
         })
       })
     }
