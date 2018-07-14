@@ -8,19 +8,25 @@
     <el-row v-for="(question, qIndex) in questionnaire.questions" v-bind:key="qIndex">
       <el-row style="flex" justify="start">
         <div v-if="question.type === 'SINGLE'">
-          <el-row style="text-align: left;"><h4>{{(qIndex + 1) + '. ' + question.text + '？'}}</h4></el-row>
+          <el-row style="text-align: left;"><h4>{{`${qIndex + 1}、${question.text} `}}<small>[单选]</small></h4></el-row>
           <el-radio-group v-model="answers[qIndex]">
             <el-radio-button v-for="(option, oIndex) in question.options" :key="oIndex" :label="number2Alphabet(oIndex) + '. ' + option.text"></el-radio-button>
           </el-radio-group>
         </div>
         <div v-if="question.type === 'MULTI'">
-          <el-row style="text-align: left;"><h4>{{(qIndex + 1) + '. ' + question.text + '？[多选]'}}</h4></el-row>
+          <el-row style="text-align: left;"><h4>{{`${qIndex + 1}、${question.text} `}}<small>[多选]</small></h4></el-row>
+          <el-checkbox-group v-model="answers[qIndex]">
+            <el-checkbox-button v-for="(option, oIndex) in question.options" :label="number2Alphabet(oIndex) + '. ' + option.text" :key="oIndex"></el-checkbox-button>
+          </el-checkbox-group>
+        </div>
+        <div v-if="question.type === 'SORT'">
+          <el-row style="text-align: left;"><h4>{{`${qIndex + 1}、${question.text} `}}<small>[排序]</small></h4></el-row>
           <el-checkbox-group v-model="answers[qIndex]">
             <el-checkbox-button v-for="(option, oIndex) in question.options" :label="number2Alphabet(oIndex) + '. ' + option.text" :key="oIndex"></el-checkbox-button>
           </el-checkbox-group>
         </div>
         <div v-if="question.type === 'FILL_IN'">
-          <el-row style="text-align: left;"><h4>{{(qIndex + 1) + '. ' + question.text + '？[填写]'}}</h4></el-row>
+          <el-row style="text-align: left;"><h4>{{`${qIndex + 1}、${question.text} `}}<small>[填写]</small></h4></el-row>
           <el-input v-model="answers[qIndex]" type="textarea"></el-input>
         </div>
       </el-row>
@@ -29,7 +35,7 @@
       <el-button type="primary" @click="submit('form')">提交答卷</el-button>
     </el-row>
     <el-row style="margin-top: 20px; font-weight: 100;">
-      <h5 style="font-weight: 100;">{{$consts.company + ' 提供技术支持'}}</h5>
+      <h5 style="font-weight: 100;">{{`${$store.state.company} 提供技术支持`}}</h5>
     </el-row>
   </div>
 </template>

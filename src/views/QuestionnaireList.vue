@@ -65,10 +65,10 @@
                 :rules="{ required: true, message: '题目不能为空', trigger: 'blur' }"
                 >
                 <el-input v-model="question.text" placeholder="题目">
-                  <el-tooltip class="item" effect="dark" answerSheetJsonArray="添加选项" placement="top" slot="append" v-if="question.type === 'SINGLE'">
+                  <el-tooltip class="item" effect="dark" content="添加选项" placement="top" slot="append" v-if="question.type !== 'FILL_IN'">
                     <el-button @click.prevent="newOption(qIndex)" icon="el-icon-plus"></el-button>
                   </el-tooltip>
-                  <el-tooltip class="item" effect="dark" answerSheetJsonArray="删除题目" placement="top" slot="append">
+                  <el-tooltip class="item" effect="dark" content="删除题目" placement="top" slot="append">
                     <el-button @click.prevent="delQuestion(qIndex, question.text)" icon="el-icon-delete"></el-button>
                   </el-tooltip>
                 </el-input>
@@ -90,7 +90,7 @@
               </el-form-item>
             </el-col>
           </el-row>
-          <el-row v-if="question.type === 'SINGLE' || question.type === 'MULTI'">
+          <el-row v-if="question.type === 'SINGLE'">
             <el-col :span="23" :offset="1" :style="'text-align: left;'">
               <el-form-item
                 :label="'计算均值'"
@@ -105,7 +105,7 @@
               </el-form-item>
             </el-col>
           </el-row>
-          <el-row v-for="(option, oIndex) in question.options" :key="oIndex">
+          <el-row v-for="(option, oIndex) in question.options" :key="oIndex" v-if="question.type !== 'FILL_IN'">
             <el-col :span="question.type === 'SINGLE' ? 19 : 23" :offset="1">
               <el-form-item
                 :label="'选项 ' + number2Alphabet(oIndex)"
@@ -113,7 +113,7 @@
                 :rules="{ required: true, message: '内容不能为空', trigger: 'blur' }"
                 >
                 <el-input v-model="option.text" placeholder="选项内容">
-                  <el-tooltip class="item" effect="dark" answerSheetJsonArray="删除选项" placement="top" slot="append">
+                  <el-tooltip class="item" effect="dark" content="删除选项" placement="top" slot="append">
                     <el-button @click.prevent="delOption(qIndex, oIndex, option.text)" icon="el-icon-delete"></el-button>
                   </el-tooltip>
                 </el-input>
@@ -172,7 +172,7 @@
           v-for="(option, oIndex) in question.options"
           :key="oIndex"
           :gutter="10"
-          :style="'margin: 10px;' + (option.text === '总计' || option.text === '平均分' ? 'color: red;' : '')"
+          :style="'margin: 10px;'"
           >
           <el-col :class="'option-class'" :span="16"><div>{{option.text}}</div></el-col>
           <el-col :class="'option-class'" :span="2"><div>{{option.weights}}</div></el-col>
@@ -458,13 +458,6 @@ export default {
 </script>
 
 <style scoped>
-div#root {
-  height: 100%;
-  width: 100%;
-  overflow-x: hidden;
-  overflow-y: auto;
-}
-
 #list {
   margin: 20px;
   box-shadow: 0 3px 1px rgba(0,0,0,0.1);

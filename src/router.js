@@ -17,26 +17,38 @@ const router = new Router({
   routes: [
     {
       path: '/login',
-      component: Login
+      component: Login,
+      meta: {
+        auth: false
+      }
     },
     {
       path: '/',
-      component: QuestionnaireList
-    },
-    {
-      path: '/questionnaire/:id',
-      component: Questionnaire
+      component: QuestionnaireList,
+      meta: {
+        auth: true
+      }
     },
     {
       path: '/success',
-      component: Success
+      component: Success,
+      meta: {
+        auth: false
+      }
+    },
+    {
+      path: '/questionnaire/:id',
+      component: Questionnaire,
+      meta: {
+        auth: false
+      }
     }
   ]
 })
 
 router.beforeEach((to, from, next) => {
   if (to.path !== '/login') {
-    if (to.path.startsWith('/questionnaire/') || to.path.startsWith('/answer') || to.path.startsWith('/success')) {
+    if (!to.meta.auth) {
       next()
     } else {
       if (store.state.token) {
