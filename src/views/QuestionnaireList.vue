@@ -17,8 +17,33 @@
         <el-table-column prop="createTime" label="创建时间" width="200" align="center"></el-table-column>
         <el-table-column width="600" label="操作" align="left">
           <template slot-scope="scope">
-            <el-button type="primary" size="small" @click="showEditModal(scope.row)">编辑</el-button>
-            <el-button type="success" size="small" @click="showStatisticsModal(scope.row)">统计</el-button>
+            <el-button type="primary" size="small" @click="showEditModal(scope.row)"
+              v-if="scope.row.phase === $store.state.constants.questionnairePhase.PRE_BUILD.desc"
+              >编辑</el-button>
+            <el-button type="success" size="small" @click="showStatisticsModal(scope.row)"
+              v-if="scope.row.phase !== $store.state.constants.questionnairePhase.PRE_BUILD.desc"
+              >统计</el-button>
+            <el-popover
+              placement="left"
+              width="200"
+              trigger="click"
+              style="margin: 0 10px;"
+              v-if="scope.row.phase !== $store.state.constants.questionnairePhase.COLLECTED.desc && scope.row.phase === $store.state.constants.questionnairePhase.PUBLISHED.desc"
+              >
+              <img :src="`http://qr.liantu.com/api.php?bg=f3f3f3&fg=ff0000&gc=222222&el=l&w=200&m=10&text=http://112.74.193.60/%23/questionnaire/${scope.row.domainId}`"/>
+              <el-button type="primary" size="small" slot="reference">二维码</el-button>
+            </el-popover>
+            <el-button type="success" size="small" @click="publish(scope.row)"
+              v-if="scope.row.phase === $store.state.constants.questionnairePhase.PRE_BUILD.desc"
+              >发布</el-button>
+            <el-button type="warning" size="small" @click="collect(scope.row)"
+              v-if="scope.row.phase === $store.state.constants.questionnairePhase.PUBLISHED.desc"
+              >收卷</el-button>
+            <el-button type="warning" size="small" @click="duplicate(scope.row)">复制</el-button>
+            <el-button type="warning" size="small" @click="answer(scope.row)"
+              v-if="scope.row.phase !== $store.state.constants.questionnairePhase.COLLECTED.desc && scope.row.phase === $store.state.constants.questionnairePhase.PUBLISHED.desc"
+              >答题</el-button>
+            <el-button type="danger" size="small" @click="delQuestionnaire(scope.row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -47,7 +72,7 @@
           <el-col :span="8">
             <el-form-item label="日期" required>
               <el-form-item prop="date" :rules="[{ type: 'string', required: true, message: '请输入日期', trigger: 'blur' }]">
-                <el-date-picker v-model="form.date" type="date" placeholder="选择日期" format="yyyy 年 MM 月 dd 日" value-format="yyyy-MM-dd" style="width: 100%;"></el-date-picker>
+                <el-date-picker v-model="form.date" type="date" placeholder="选择日期" format="yyyy 年 MM 月 dd 日" value-format="yyyy 年 MM 月 dd 日" style="width: 100%;"></el-date-picker>
               </el-form-item>
             </el-form-item>
           </el-col>
@@ -71,6 +96,16 @@
                   <el-tooltip class="item" effect="dark" content="删除题目" placement="top" slot="append">
                     <el-button @click.prevent="delQuestion(qIndex, question.text)" icon="el-icon-delete"></el-button>
                   </el-tooltip>
+                  <el-tooltip class="item" effect="dark" content="上移" placement="top" slot="append"
+                    v-if="qIndex !== 0"
+                    >
+                    <el-button @click.prevent="moveQuestion(qIndex, 'up')" icon="el-icon-arrow-up"></el-button>
+                  </el-tooltip>
+                  <el-tooltip class="item" effect="dark" content="下移" placement="top" slot="append"
+                    v-if="qIndex !== form.questions.length - 1"
+                    >
+                    <el-button @click.prevent="moveQuestion(qIndex, 'down')" icon="el-icon-arrow-down"></el-button>
+                  </el-tooltip>
                 </el-input>
               </el-form-item>
           </el-row>
@@ -90,7 +125,7 @@
               </el-form-item>
             </el-col>
           </el-row>
-          <el-row v-if="question.type === 'SINGLE'">
+          <el-row v-if="question.type === $store.state.constants.questionType.SINGLE.name || question.type === $store.state.constants.questionType.MULTI.name">
             <el-col :span="23" :offset="1" :style="'text-align: left;'">
               <el-form-item
                 :label="'计算均值'"
@@ -105,8 +140,8 @@
               </el-form-item>
             </el-col>
           </el-row>
-          <el-row v-for="(option, oIndex) in question.options" :key="oIndex" v-if="question.type !== 'FILL_IN'">
-            <el-col :span="question.type === 'SINGLE' ? 19 : 23" :offset="1">
+          <el-row v-for="(option, oIndex) in question.options" :key="oIndex" v-if="question.type !== $store.state.constants.questionType.FILL_IN.name">
+            <el-col :span="(question.type === $store.state.constants.questionType.SINGLE.name || question.type === $store.state.constants.questionType.MULTI.name) && question.calcAvg ? 19 : 23" :offset="1">
               <el-form-item
                 :label="'选项 ' + number2Alphabet(oIndex)"
                 :prop="'questions.' + qIndex + '.options.' + oIndex + '.text'"
@@ -116,14 +151,27 @@
                   <el-tooltip class="item" effect="dark" content="删除选项" placement="top" slot="append">
                     <el-button @click.prevent="delOption(qIndex, oIndex, option.text)" icon="el-icon-delete"></el-button>
                   </el-tooltip>
+                  <el-tooltip class="item" effect="dark" content="上移" placement="top" slot="append"
+                    v-if="oIndex !== 0"
+                    >
+                    <el-button @click.prevent="moveOption(qIndex, oIndex, 'up')" icon="el-icon-arrow-up"></el-button>
+                  </el-tooltip>
+                  <el-tooltip class="item" effect="dark" content="下移" placement="top" slot="append"
+                    v-if="oIndex !== question.options.length - 1"
+                    >
+                    <el-button @click.prevent="moveOption(qIndex, oIndex, 'down')" icon="el-icon-arrow-down"></el-button>
+                  </el-tooltip>
                 </el-input>
               </el-form-item>
             </el-col>
-            <el-col :span="question.type === 'SINGLE' ? 4 : 0">
+            <el-col
+              :span="(question.type === $store.state.constants.questionType.SINGLE.name || question.type === $store.state.constants.questionType.MULTI.name) && question.calcAvg ? 4 : 0"
+              >
               <el-form-item
                 :label="'权重'"
                 :prop="'questions.' + qIndex + '.options.' + oIndex + '.weights'"
                 :rules="[{ type: 'number', message: '权重必须为数字值'}, { required: true, message: '请输入权重'}]"
+                v-if="(question.type === $store.state.constants.questionType.SINGLE.name || question.type === $store.state.constants.questionType.MULTI.name)  && question.calcAvg"
                 required>
                 <el-input v-model.number="option.weights" placeholder="权重"></el-input>
               </el-form-item>
@@ -188,6 +236,7 @@
 <script>
 export default {
   data () {
+    let questionType = this.$store.state.constants.questionType
     return {
       table: null,
       loading: {
@@ -210,8 +259,9 @@ export default {
         guide: '',
         date: '',
         questions: [{
-          type: 'SINGLE',
+          type: questionType.SINGLE.name,
           calcAvg: true,
+          rank: 0,
           options: [{
             text: '不清楚',
             weights: 0,
@@ -227,8 +277,9 @@ export default {
         guide: '',
         date: '',
         questions: [{
-          type: 'SINGLE',
+          type: questionType.SINGLE.name,
           calcAvg: true,
+          rank: 0,
           options: [{
             text: '不清楚',
             weights: 0,
@@ -266,6 +317,22 @@ export default {
     },
     reset (formName) {
       this.$refs[formName].resetFields()
+    },
+    delQuestionnaire (row) {
+      let _vm = this
+      _vm.$confirm(`确认删除 ${row.text} 吗？`, '警告', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        _vm.$axios.delete(`/questionnaire/${row.domainId}`).then(resp => {
+          _vm.getList(1, 50)
+          _vm.$message({
+            type: 'success',
+            message: '删除成功!'
+          })
+        })
+      })
     },
     newQuestionnaire () {
       this.visible.formDialog = true
@@ -330,6 +397,13 @@ export default {
         _vm.loading.table = false
       })
     },
+    beforeEditModalClose (done) {
+      this.reset('form')
+      done()
+    },
+    fixedFloat (num) {
+      return typeof num !== 'number' ? num : num.toFixed(2)
+    },
     showEditModal (row) {
       var _vm = this
       _vm.visible.formDialog = true
@@ -338,13 +412,6 @@ export default {
         _vm.loading.formDialog = false
         _vm.form = resp.data.data
       })
-    },
-    beforeEditModalClose (done) {
-      this.reset('form')
-      done()
-    },
-    fixedFloat (num) {
-      return typeof num !== 'number' ? num : num.toFixed(2)
     },
     showStatisticsModal (row) {
       var _vm = this
@@ -407,12 +474,10 @@ export default {
               question.score = 0
               question.percent = 0
               for (let option of question.options) {
-                if (option.weights !== 0) {
-                  option.percent = option.count * 100 / question.count
-                  option.score = option.weights * option.percent
-                  question.score += option.score
-                  question.percent += option.percent
-                }
+                option.percent = option.count * 100 / question.count
+                option.score = option.weights * option.percent
+                question.score += option.score
+                question.percent += option.percent
               }
             }
           }
@@ -421,27 +486,25 @@ export default {
           _vm.questionnaire.avgCount = 0
           for (let qIndex in _vm.questionnaire.questions) {
             let question = _vm.questionnaire.questions[qIndex]
-            if (question.calcAvg) {
-              if (question.type === 'SINGLE' || question.type === 'MULTI') {
-                let avg = {
-                  text: '平均分',
-                  weights: '-',
-                  count: '-',
-                  percent: '-',
-                  score: question.score / question.options.length
-                }
-                let sum = {
-                  text: '总计',
-                  weights: '-',
-                  count: question.count === answerSheetCount ? question.count : `${question.count}/${answerSheetCount}`,
-                  percent: question.count === answerSheetCount ? 100 : question.count * 100 / answerSheetCount,
-                  score: '-'
-                }
-                _vm.questionnaire.avg += avg.score
-                _vm.questionnaire.avgCount++
-                question.options.push(sum)
-                question.options.push(avg)
+            if (question.calcAvg && (question.type === _vm.$store.state.constants.questionType.SINGLE.name || question.type === _vm.$store.state.constants.questionType.MULTI.name)) {
+              let avg = {
+                text: '平均分',
+                weights: '-',
+                count: '-',
+                percent: '-',
+                score: question.score / question.options.length
               }
+              let sum = {
+                text: '总计',
+                weights: '-',
+                count: question.count === answerSheetCount ? question.count : `${question.count}/${answerSheetCount}`,
+                percent: question.count === answerSheetCount ? 100 : question.count * 100 / answerSheetCount,
+                score: '-'
+              }
+              _vm.questionnaire.avg += avg.score
+              _vm.questionnaire.avgCount++
+              question.options.push(sum)
+              question.options.push(avg)
             }
           }
           _vm.questionnaire.avg = _vm.questionnaire.avg / _vm.questionnaire.avgCount
@@ -449,11 +512,111 @@ export default {
           _vm.loading.statisticsDialog = false
         })
       })
+    },
+    publish (row) {
+      let _vm = this
+      _vm.$confirm(`确认发布 ${row.text} 吗？`, '警告', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        _vm.$axios.post(`/questionnaire/${row.domainId}/phase/published`).then(resp => {
+          _vm.getList(1, 50)
+        })
+      })
+    },
+    collect (row) {
+      let _vm = this
+      _vm.$confirm(`确认 ${row.text} 收卷吗？`, '警告', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        _vm.$axios.post(`/questionnaire/${row.domainId}/phase/collected`).then(resp => {
+          _vm.getList(1, 50)
+        })
+      })
+    },
+    duplicate (row) {
+      let _vm = this
+      _vm.$confirm(`确认复制 ${row.text} 吗？`, '警告', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        _vm.$axios.post(`/questionnaire/${row.domainId}/duplicate`).then(resp => {
+          _vm.getList(1, 50)
+        })
+      })
+    },
+    answer (row) {
+      window.open(`/#/questionnaire/${row.domainId}`)
+    },
+    moveQuestion (qIndex, type) {
+      let _vm = this
+      let questions = _vm.form.questions
+      let current = JSON.parse(JSON.stringify(questions[qIndex]))
+      switch (type) {
+        case 'up':
+          let previous = JSON.parse(JSON.stringify(questions[qIndex - 1]))
+          alignQuestion(questions[qIndex], previous)
+          questions[qIndex].rank = qIndex
+          alignQuestion(questions[qIndex - 1], current)
+          questions[qIndex - 1].rank = qIndex - 1
+          break
+        case 'down':
+          let next = JSON.parse(JSON.stringify(questions[qIndex + 1]))
+          alignQuestion(questions[qIndex], next)
+          questions[qIndex].rank = qIndex
+          alignQuestion(questions[qIndex + 1], current)
+          questions[qIndex + 1].rank = qIndex + 1
+          break
+      }
+    },
+    moveOption (qIndex, oIndex, type) {
+      let _vm = this
+      let options = _vm.form.questions[qIndex].options
+      let current = JSON.parse(JSON.stringify(options[oIndex]))
+      switch (type) {
+        case 'up':
+          let previous = JSON.parse(JSON.stringify(options[oIndex - 1]))
+          alignOption(options[oIndex], previous)
+          options[oIndex].rank = oIndex
+          alignOption(options[oIndex - 1], current)
+          options[oIndex - 1].rank = oIndex - 1
+          break
+        case 'down':
+          let next = JSON.parse(JSON.stringify(options[oIndex + 1]))
+          alignOption(options[oIndex], next)
+          options[oIndex].rank = oIndex
+          alignOption(options[oIndex + 1], current)
+          options[oIndex + 1].rank = oIndex + 1
+          break
+      }
     }
   },
   beforeMount () {
     this.getList(1, 50)
   }
+}
+
+function alignQuestion (question, replacement) {
+  question.text = replacement.text
+  question.type = replacement.type
+  question.rank = replacement.rank
+  question.calcAvg = replacement.calcAvg
+  question.domainId = replacement.domainId
+  question.options.splice(0, question.options.length)
+  for (let option of replacement.options) {
+    question.options.push(option)
+  }
+}
+
+function alignOption (option, replacement) {
+  option.text = replacement.text
+  option.rank = replacement.rank
+  option.weights = replacement.weights
+  option.domainId = replacement.domainId
 }
 </script>
 

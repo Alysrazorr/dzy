@@ -4,7 +4,6 @@ import store from './store'
 import router from './router'
 import axios from './axios'
 import utils from './utils'
-import consts from './consts'
 import echarts from 'echarts'
 import ElementUI from 'element-ui'
 import 'element-ui/lib/theme-chalk/index.css'
@@ -12,7 +11,6 @@ import 'element-ui/lib/theme-chalk/index.css'
 Vue.config.productionTip = false
 
 Vue.prototype.$axios = axios
-Vue.prototype.$consts = consts
 Vue.prototype.$utils = utils
 Vue.prototype.$echarts = echarts
 
