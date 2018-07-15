@@ -295,6 +295,16 @@ export default {
       _vm.$refs[formName].validate((valid) => {
         if (valid) {
           _vm.loading.formDialog = true
+          for (let qIndex in _vm.form.questions) {
+            let question = _vm.form.questions[qIndex]
+            question.rank = qIndex
+            if (Array.isArray(question.options)) {
+              for (let oIndex in question.options) {
+                let option = question.options[oIndex]
+                option.rank = oIndex
+              }
+            }
+          }
           if (_vm.form.domainId === undefined) {
             _vm.$axios.put('/questionnaire', _vm.form).then(resp => {
               _vm.loading.formDialog = false
@@ -362,16 +372,9 @@ export default {
       })
     },
     newOption (qIndex) {
-      let options = this.form.questions[qIndex].options
-      if (options[options.length - 1].text === '不清楚') {
-        options.splice(-1, 0, {
-          weights: 1
-        })
-      } else {
-        options.push({
-          weights: 1
-        })
-      }
+      this.form.questions[qIndex].options.push({
+        weights: 1
+      })
     },
     delOption (qIndex, oIndex, text) {
       this.$confirm(`确认删除 ${typeof text !== 'undefined' ? text : '本选项'} 吗？`, '警告', {
