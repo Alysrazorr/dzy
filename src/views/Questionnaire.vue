@@ -7,26 +7,30 @@
     <p style="text-align: justify; line-height: 1.5em;"><strong>答题说明：</strong><small>{{questionnaire.guide}}</small></p>
     <el-row v-for="(question, qIndex) in questionnaire.questions" v-bind:key="qIndex">
       <el-row style="flex" justify="start">
-        <div v-if="question.type === 'SINGLE'">
+        <div v-if="question.type === questionType.SINGLE.name">
           <el-row style="text-align: left;"><h4>{{`${qIndex + 1}、${question.text} `}}<small>[单选]</small></h4></el-row>
           <el-radio-group v-model="answers[qIndex]">
             <el-radio-button v-for="(option, oIndex) in question.options" :key="oIndex" :label="number2Alphabet(oIndex) + '. ' + option.text"></el-radio-button>
           </el-radio-group>
         </div>
-        <div v-if="question.type === 'MULTI'">
+        <div v-if="question.type === questionType.MULTI.name">
           <el-row style="text-align: left;"><h4>{{`${qIndex + 1}、${question.text} `}}<small>[多选]</small></h4></el-row>
           <el-checkbox-group v-model="answers[qIndex]">
             <el-checkbox-button v-for="(option, oIndex) in question.options" :label="number2Alphabet(oIndex) + '. ' + option.text" :key="oIndex"></el-checkbox-button>
           </el-checkbox-group>
         </div>
-        <div v-if="question.type === 'SORT'">
+        <div v-if="question.type === questionType.SORT.name">
           <el-row style="text-align: left;"><h4>{{`${qIndex + 1}、${question.text} `}}<small>[排序]</small></h4></el-row>
           <el-checkbox-group v-model="answers[qIndex]">
             <el-checkbox-button v-for="(option, oIndex) in question.options" :label="number2Alphabet(oIndex) + '. ' + option.text" :key="oIndex"></el-checkbox-button>
           </el-checkbox-group>
         </div>
-        <div v-if="question.type === 'FILL_IN'">
+        <div v-if="question.type === questionType.FILL.name">
           <el-row style="text-align: left;"><h4>{{`${qIndex + 1}、${question.text} `}}<small>[填写]</small></h4></el-row>
+          <el-input v-model="answers[qIndex]" type="textarea"></el-input>
+        </div>
+        <div v-if="question.type === questionType.SCORE.name">
+          <el-row style="text-align: left;"><h4>{{`${qIndex + 1}、${question.text} `}}<small>[评分]</small></h4></el-row>
           <el-input v-model="answers[qIndex]" type="textarea"></el-input>
         </div>
       </el-row>
@@ -43,7 +47,9 @@
 <script>
 export default {
   data () {
+    let questionType = this.$store.state.constants.questionType
     return {
+      questionType,
       questionnaire: {},
       answers: []
     }
@@ -69,7 +75,7 @@ export default {
     var _vm = this
     _vm.$axios.get(`/questionnaire/${_vm.$route.params.id}`).then(resp => {
       for (let i = 0; i < resp.data.data.questions.length; i++) {
-        if (resp.data.data.questions[i]['type'] === 'FILL_IN') {
+        if (resp.data.data.questions[i]['type'] === _vm.questionType.FILL.name) {
           _vm.answers[i] = ''
         } else {
           _vm.answers[i] = []

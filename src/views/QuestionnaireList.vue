@@ -90,7 +90,7 @@
                 :rules="{ required: true, message: '题目不能为空', trigger: 'blur' }"
                 >
                 <el-input v-model="question.text" placeholder="题目">
-                  <el-tooltip class="item" effect="dark" content="添加选项" placement="top" slot="append" v-if="question.type !== 'FILL_IN'">
+                  <el-tooltip class="item" effect="dark" content="添加选项" placement="top" slot="append" v-if="question.type !== questionType.FILL.name">
                     <el-button @click.prevent="newOption(qIndex)" icon="el-icon-plus"></el-button>
                   </el-tooltip>
                   <el-tooltip class="item" effect="dark" content="删除题目" placement="top" slot="append">
@@ -120,12 +120,13 @@
                     <el-option label="单选" value="SINGLE"></el-option>
                     <el-option label="多选" value="MULTI"></el-option>
                     <el-option label="排序" value="SORT"></el-option>
-                    <el-option label="填写" value="FILL_IN"></el-option>
+                    <el-option label="填写" value="FILL"></el-option>
+                    <el-option label="评分" value="SCORE"></el-option>
                 </el-select>
               </el-form-item>
             </el-col>
           </el-row>
-          <el-row v-if="question.type === $store.state.constants.questionType.SINGLE.name || question.type === $store.state.constants.questionType.MULTI.name">
+          <el-row v-if="question.type === questionType.SINGLE.name || question.type === questionType.MULTI.name">
             <el-col :span="23" :offset="1" :style="'text-align: left;'">
               <el-form-item
                 :label="'计算均值'"
@@ -140,8 +141,8 @@
               </el-form-item>
             </el-col>
           </el-row>
-          <el-row v-for="(option, oIndex) in question.options" :key="oIndex" v-if="question.type !== $store.state.constants.questionType.FILL_IN.name">
-            <el-col :span="(question.type === $store.state.constants.questionType.SINGLE.name || question.type === $store.state.constants.questionType.MULTI.name) && question.calcAvg ? 19 : 23" :offset="1">
+          <el-row v-for="(option, oIndex) in question.options" :key="oIndex" v-if="question.type !== questionType.FILL.name">
+            <el-col :span="(question.type === questionType.SINGLE.name || question.type === questionType.MULTI.name) && question.calcAvg ? 19 : 23" :offset="1">
               <el-form-item
                 :label="'选项 ' + number2Alphabet(oIndex)"
                 :prop="'questions.' + qIndex + '.options.' + oIndex + '.text'"
@@ -165,13 +166,13 @@
               </el-form-item>
             </el-col>
             <el-col
-              :span="(question.type === $store.state.constants.questionType.SINGLE.name || question.type === $store.state.constants.questionType.MULTI.name) && question.calcAvg ? 4 : 0"
+              :span="(question.type === questionType.SINGLE.name || question.type === questionType.MULTI.name) && question.calcAvg ? 4 : 0"
               >
               <el-form-item
                 :label="'权重'"
                 :prop="'questions.' + qIndex + '.options.' + oIndex + '.weights'"
                 :rules="[{ type: 'number', message: '权重必须为数字值'}, { required: true, message: '请输入权重'}]"
-                v-if="(question.type === $store.state.constants.questionType.SINGLE.name || question.type === $store.state.constants.questionType.MULTI.name)  && question.calcAvg"
+                v-if="(question.type === questionType.SINGLE.name || question.type === questionType.MULTI.name)  && question.calcAvg"
                 required>
                 <el-input v-model.number="option.weights" placeholder="权重"></el-input>
               </el-form-item>
@@ -239,6 +240,7 @@ export default {
     let questionType = this.$store.state.constants.questionType
     return {
       table: null,
+      questionType,
       loading: {
         table: false,
         formDialog: false,
@@ -489,7 +491,7 @@ export default {
           _vm.questionnaire.avgCount = 0
           for (let qIndex in _vm.questionnaire.questions) {
             let question = _vm.questionnaire.questions[qIndex]
-            if (question.calcAvg && (question.type === _vm.$store.state.constants.questionType.SINGLE.name || question.type === _vm.$store.state.constants.questionType.MULTI.name)) {
+            if (question.calcAvg && (question.type === _vm.questionType.SINGLE.name || question.type === _vm.questionType.MULTI.name)) {
               let avg = {
                 text: '平均分',
                 weights: '-',

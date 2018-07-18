@@ -12,9 +12,13 @@ export default {
       name: 'SORT',
       desc: '排序'
     },
-    FILL_IN: {
-      name: 'FILL_IN',
+    FILL: {
+      name: 'FILL',
       desc: '填写'
+    },
+    SCORE: {
+      name: 'SCORE',
+      desc: '评分'
     }
   },
   questionnairePhase: {
