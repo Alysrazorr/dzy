@@ -144,7 +144,7 @@
           <el-row v-for="(option, oIndex) in question.options" :key="oIndex" v-if="question.type !== questionType.FILL.name">
             <el-col :span="(question.type === questionType.SINGLE.name || question.type === questionType.MULTI.name) && question.calcAvg ? 19 : 23" :offset="1">
               <el-form-item
-                :label="'选项 ' + number2Alphabet(oIndex)"
+                :label="question.type !== questionType.SCORE.name ? `选项${number2Alphabet(oIndex)}` : `评分项`"
                 :prop="'questions.' + qIndex + '.options.' + oIndex + '.text'"
                 :rules="{ required: true, message: '内容不能为空', trigger: 'blur' }"
                 >
@@ -197,7 +197,7 @@
       </el-row>
       <el-row
         v-for="(question, qIndex) in questionnaire.questions"
-        v-if="(question.type === 'SINGLE' || question.type === 'MULTI') && question.calcAvg"
+        v-if="(question.type === 'SINGLE' || question.type === 'MULTI') && question.calcAvg || question.type === 'SCORE'"
         v-loading="loading.statisticsDialog"
         :key="qIndex"
         :class="'question-class'"
@@ -206,6 +206,7 @@
           <h1 :style="'font-weight: 100; padding: 0 10px;'">{{question.text}}</h1>
         </el-row>
         <el-row
+          v-if="(question.type === 'SINGLE' || question.type === 'MULTI') && question.calcAvg"
           type="flex"
           :gutter="10"
           :style="'margin: 10px; margin-top: 0;'"
@@ -219,6 +220,7 @@
         <el-row
           type="flex"
           v-for="(option, oIndex) in question.options"
+          v-if="(question.type === 'SINGLE' || question.type === 'MULTI') && question.calcAvg"
           :key="oIndex"
           :gutter="10"
           :style="'margin: 10px;'"
@@ -228,6 +230,69 @@
           <el-col :class="'option-class'" :span="2"><div>{{fixedFloat(option.count === 0 || option.count === NaN ? '-' : option.count)}}</div></el-col>
           <el-col :class="'option-class'" :span="2"><div>{{fixedFloat(option.percent === '0.00' ? '-' : option.percent)}}</div></el-col>
           <el-col :class="'option-class'" :span="2"><div>{{fixedFloat(option.score === '0.00' ? '-' : option.score)}}</div></el-col>
+        </el-row>
+        <el-row
+          v-if="question.type === 'SCORE'"
+          type="flex"
+          :gutter="10"
+          :style="'margin: 10px; margin-top: 0;'"
+          >
+          <el-col :class="'option-header-class'" :span="8"><div>权重</div></el-col>
+          <el-col :class="'option-header-class'" :span="1"><div>5</div></el-col>
+          <el-col :class="'option-header-class'" :span="1"><div>4</div></el-col>
+          <el-col :class="'option-header-class'" :span="1"><div>3</div></el-col>
+          <el-col :class="'option-header-class'" :span="1"><div>2</div></el-col>
+          <el-col :class="'option-header-class'" :span="1"><div>1</div></el-col>
+          <el-col :class="'option-header-class'" :span="1"><div>0</div></el-col>
+          <el-col :class="'option-header-class'" :span="6"><div>百分比</div></el-col>
+          <el-col :class="'option-header-class'" :span="2"><div>-</div></el-col>
+          <el-col :class="'option-header-class'" :span="2"><div>-</div></el-col>
+        </el-row>
+        <el-row
+          v-if="question.type === 'SCORE'"
+          type="flex"
+          :gutter="10"
+          :style="'margin: 10px; margin-top: 0;'"
+          >
+          <el-col :class="'option-header-class'" :span="8"><div>选项</div></el-col>
+          <el-col :class="'option-header-class'" :span="1"><div>高</div></el-col>
+          <el-col :class="'option-header-class'" :span="1"><div>较高</div></el-col>
+          <el-col :class="'option-header-class'" :span="1"><div>一般</div></el-col>
+          <el-col :class="'option-header-class'" :span="1"><div>较低</div></el-col>
+          <el-col :class="'option-header-class'" :span="1"><div>低</div></el-col>
+          <el-col :class="'option-header-class'" :span="1"><div>不清楚</div></el-col>
+          <el-col :class="'option-header-class'" :span="1"><div>高</div></el-col>
+          <el-col :class="'option-header-class'" :span="1"><div>较高</div></el-col>
+          <el-col :class="'option-header-class'" :span="1"><div>一般</div></el-col>
+          <el-col :class="'option-header-class'" :span="1"><div>较低</div></el-col>
+          <el-col :class="'option-header-class'" :span="1"><div>低</div></el-col>
+          <el-col :class="'option-header-class'" :span="1"><div>不清楚</div></el-col>
+          <el-col :class="'option-header-class'" :span="2"><div>票数</div></el-col>
+          <el-col :class="'option-header-class'" :span="2"><div>平均分</div></el-col>
+        </el-row>
+        <el-row
+          type="flex"
+          v-for="(option, oIndex) in question.options"
+          v-if="question.type === 'SCORE'"
+          :key="oIndex"
+          :gutter="10"
+          :style="'margin: 10px;'"
+          >
+          <el-col :class="'option-class'" :span="8"><div>{{option.text}}</div></el-col>
+          <el-col :class="'option-class'" :span="1"><div>{{option.counts ? option.counts[5] : '-'}}</div></el-col>
+          <el-col :class="'option-class'" :span="1"><div>{{option.counts ? option.counts[4] : '-'}}</div></el-col>
+          <el-col :class="'option-class'" :span="1"><div>{{option.counts ? option.counts[3] : '-'}}</div></el-col>
+          <el-col :class="'option-class'" :span="1"><div>{{option.counts ? option.counts[2] : '-'}}</div></el-col>
+          <el-col :class="'option-class'" :span="1"><div>{{option.counts ? option.counts[1] : '-'}}</div></el-col>
+          <el-col :class="'option-class'" :span="1"><div>{{option.counts ? option.counts[0] : '-'}}</div></el-col>
+          <el-col :class="'option-class'" :span="1"><div>{{fixedFloat(option.percents ? option.percents[5] : '-')}}</div></el-col>
+          <el-col :class="'option-class'" :span="1"><div>{{fixedFloat(option.percents ? option.percents[4] : '-')}}</div></el-col>
+          <el-col :class="'option-class'" :span="1"><div>{{fixedFloat(option.percents ? option.percents[3] : '-')}}</div></el-col>
+          <el-col :class="'option-class'" :span="1"><div>{{fixedFloat(option.percents ? option.percents[2] : '-')}}</div></el-col>
+          <el-col :class="'option-class'" :span="1"><div>{{fixedFloat(option.percents ? option.percents[1] : '-')}}</div></el-col>
+          <el-col :class="'option-class'" :span="1"><div>{{fixedFloat(option.percents ? option.percents[0] : '-')}}</div></el-col>
+          <el-col :class="'option-class'" :span="2"><div>{{option.count}}</div></el-col>
+          <el-col :class="'option-class'" :span="2"><div>{{fixedFloat(option.avg)}}</div></el-col>
         </el-row>
       </el-row>
     </el-dialog>
@@ -461,6 +526,18 @@ export default {
                   }
                 }
               }
+
+              if (question.type === _vm.questionType.SCORE.name) {
+                for (let option of questionOptions) {
+                  option.score = 0
+                  option.count = 0
+                  option.counts = option.counts === undefined || option.counts === null ? [0, 0, 0, 0, 0, 0] : option.counts
+                  option.percents = [0, 0, 0, 0, 0, 0]
+                }
+                for (let oIndex in questionOptions) {
+                  questionOptions[oIndex].counts[parseInt(questionAnswer[oIndex]) - 1]++
+                }
+              }
             }
           }
 
@@ -474,6 +551,7 @@ export default {
               }
             }
           }
+
           for (let question of _vm.questionnaire.questions) {
             if (question.calcAvg) {
               question.score = 0
@@ -509,6 +587,41 @@ export default {
               _vm.questionnaire.avg += avg.score
               _vm.questionnaire.avgCount++
               question.options.push(sum)
+              question.options.push(avg)
+            }
+
+            if (question.type === _vm.questionType.SCORE.name) {
+              question.score = 0
+              for (let option of question.options) {
+                for (let count of option.counts) {
+                  option.count += count
+                }
+              }
+              for (let option of question.options) {
+                for (let cIndex in option.counts) {
+                  option.percents[cIndex] = option.counts[cIndex] * 100 / option.count
+                }
+              }
+              for (let option of question.options) {
+                for (let cIndex in option.counts) {
+                  option.percents[cIndex] = option.counts[cIndex] * 100 / option.count
+                }
+              }
+              for (let option of question.options) {
+                for (let weight in [ 5, 4, 3, 2, 1, 0 ]) {
+                  option.score += option.percents[weight] * weight
+                }
+                option.avg = option.score / 6
+                question.score += option.avg
+              }
+              let avg = {
+                text: '总平均',
+                count: '-',
+                score: question.score / question.options.length,
+                avg: question.score / question.options.length
+              }
+              _vm.questionnaire.avg += avg.score
+              _vm.questionnaire.avgCount++
               question.options.push(avg)
             }
           }
