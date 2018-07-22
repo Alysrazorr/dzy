@@ -4,6 +4,10 @@ export default {
       name: 'SINGLE',
       desc: '单选'
     },
+    CALC: {
+      name: 'CALC',
+      desc: '计分'
+    },
     MULTI: {
       name: 'MULTI',
       desc: '多选'

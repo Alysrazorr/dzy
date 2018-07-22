@@ -7,7 +7,7 @@
     <p style="text-align: justify; line-height: 1.5em;"><strong>答题说明：</strong><small>{{questionnaire.guide}}</small></p>
     <el-row v-for="(question, qIndex) in questionnaire.questions" v-bind:key="qIndex">
       <el-row style="flex" justify="start">
-        <div v-if="question.type === questionType.SINGLE.name">
+        <div v-if="question.type === questionType.SINGLE.name || question.type === questionType.CALC.name">
           <el-row style="text-align: left;"><h4>{{`${qIndex + 1}、${question.text} `}}<small>[单选]</small></h4></el-row>
           <el-radio-group v-model="answers[qIndex]">
             <el-radio-button v-for="(option, oIndex) in question.options" :key="oIndex" :label="number2Alphabet(oIndex) + '. ' + option.text"></el-radio-button>
