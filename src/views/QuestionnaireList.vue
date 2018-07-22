@@ -197,16 +197,16 @@
       </el-row>
       <el-row
         v-for="(question, qIndex) in questionnaire.questions"
-        v-if="(question.type === 'SINGLE' || question.type === 'MULTI') && question.calcAvg || question.type === 'SCORE'"
+        v-if="question.type === 'SINGLE' || question.type === 'MULTI' || question.type === 'SCORE'"
         v-loading="loading.statisticsDialog"
         :key="qIndex"
         :class="'question-class'"
         >
         <el-row>
-          <h1 :style="'font-weight: 100; padding: 0 10px;'">{{question.text}}</h1>
+          <h1 :style="'font-weight: 100; padding: 0 10px; text-align: left !important;'">{{`${(qIndex + 1)}、${question.text}`}}</h1>
         </el-row>
         <el-row
-          v-if="(question.type === 'SINGLE' || question.type === 'MULTI') && question.calcAvg"
+          v-if="question.type === 'SINGLE' || question.type === 'MULTI'"
           type="flex"
           :gutter="10"
           :style="'margin: 10px; margin-top: 0;'"
@@ -220,7 +220,7 @@
         <el-row
           type="flex"
           v-for="(option, oIndex) in question.options"
-          v-if="(question.type === 'SINGLE' || question.type === 'MULTI') && question.calcAvg"
+          v-if="question.type === 'SINGLE' || question.type === 'MULTI'"
           :key="oIndex"
           :gutter="10"
           :style="'margin: 10px;'"
@@ -503,7 +503,7 @@ export default {
               let questionAnswer = answerSheet[qIndex] // 获取一份答卷中的一个问题的答案
               let questionOptions = question.options
 
-              if (question.calcAvg) {
+              if (question.type === _vm.questionType.SINGLE.name || question.type === _vm.questionType.MULTI.name) {
                 if (typeof questionAnswer === 'string') {
                   for (let oIndex in questionOptions) {
                     let option = questionOptions[oIndex]
@@ -541,59 +541,56 @@ export default {
             }
           }
 
+          _vm.questionnaire.avg = 0
+          _vm.questionnaire.avgCount = 0
+
           for (let question of _vm.questionnaire.questions) {
-            if (question.calcAvg) {
+            if (question.type === _vm.questionType.SINGLE.name || question.type === _vm.questionType.MULTI.name) {
               question.count = 0
+              question.score = 0
+              question.percent = 0
+
               for (let option of question.options) {
                 if (option.weights !== 0) {
                   question.count += option.count
                 }
               }
-            }
-          }
 
-          for (let question of _vm.questionnaire.questions) {
-            if (question.calcAvg) {
-              question.score = 0
-              question.percent = 0
               for (let option of question.options) {
                 option.percent = option.count * 100 / question.count
                 option.score = option.weights * option.percent
                 question.score += option.score
                 question.percent += option.percent
               }
-            }
-          }
 
-          _vm.questionnaire.avg = 0
-          _vm.questionnaire.avgCount = 0
-          for (let qIndex in _vm.questionnaire.questions) {
-            let question = _vm.questionnaire.questions[qIndex]
-            if (question.calcAvg && (question.type === _vm.questionType.SINGLE.name || question.type === _vm.questionType.MULTI.name)) {
-              let avg = {
-                text: '平均分',
-                weights: '-',
-                count: '-',
-                percent: '-',
-                score: question.score / question.options.length
+              if (question.calcAvg) {
+                let avg = {
+                  text: '平均分',
+                  weights: '-',
+                  count: '-',
+                  percent: '-',
+                  score: question.score / question.options.length
+                }
+                let sum = {
+                  text: '总计',
+                  weights: '-',
+                  count: question.count === answerSheetCount ? question.count : `${question.count}/${answerSheetCount}`,
+                  percent: question.count === answerSheetCount ? 100 : question.count * 100 / answerSheetCount,
+                  score: '-'
+                }
+                question.options.push(sum)
+                question.options.push(avg)
+
+                _vm.questionnaire.avg += (isNaN(avg.score) ? 0 : avg.score)
+                _vm.questionnaire.avgCount++
               }
-              let sum = {
-                text: '总计',
-                weights: '-',
-                count: question.count === answerSheetCount ? question.count : `${question.count}/${answerSheetCount}`,
-                percent: question.count === answerSheetCount ? 100 : question.count * 100 / answerSheetCount,
-                score: '-'
-              }
-              _vm.questionnaire.avg += avg.score
-              _vm.questionnaire.avgCount++
-              question.options.push(sum)
-              question.options.push(avg)
             }
 
             if (question.type === _vm.questionType.SCORE.name) {
               question.score = 0
               for (let option of question.options) {
                 for (let count of option.counts) {
+                  option.score = 0
                   option.count += count
                 }
               }
@@ -611,20 +608,21 @@ export default {
                 for (let weight in [ 5, 4, 3, 2, 1, 0 ]) {
                   option.score += option.percents[weight] * weight
                 }
-                option.avg = option.score / 6
+                option.avg = option.score / 5
                 question.score += option.avg
               }
               let avg = {
-                text: '总平均',
+                text: '平均分',
                 count: '-',
                 score: question.score / question.options.length,
                 avg: question.score / question.options.length
               }
-              _vm.questionnaire.avg += avg.score
+              _vm.questionnaire.avg += (isNaN(avg.score) ? 0 : avg.score)
               _vm.questionnaire.avgCount++
               question.options.push(avg)
             }
           }
+
           _vm.questionnaire.avg = _vm.questionnaire.avg / _vm.questionnaire.avgCount
 
           _vm.loading.statisticsDialog = false
