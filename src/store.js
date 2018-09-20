@@ -1,6 +1,7 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
 import constants from './constants'
+
 Vue.use(Vuex)
 
 export default new Vuex.Store({

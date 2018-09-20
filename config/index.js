@@ -16,9 +16,9 @@ module.exports = {
         target: 'http://localhost:8089/apis',  // 接口域名
         changeOrigin: true,  //是否跨域
         pathRewrite: {
-            '^/apis': ''   //需要rewrite重写的,
-        }              
-    }
+          '^/apis': ''   //需要rewrite重写的,
+        }
+      }
     },
 
     // Various Dev Server settings

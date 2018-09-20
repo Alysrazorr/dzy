@@ -491,6 +491,14 @@ export default {
         _vm.$axios.get(`/questionnaire/${row.domainId}`).then(resp => {
           _vm.questionnaire = resp.data.data
           let answerSheetCount = allAnswerSheetJsonArray.length
+          for (let question of _vm.questionnaire.questions) {
+            if (question.type === _vm.questionType.SCORE.name) {
+              for (let option of question.options) {
+                option.counts = option.counts === null || typeof option.counts === 'undefined' || isNaN(option.counts) ? [0, 0, 0, 0, 0, 0] : option.counts
+                option.percents = [0, 0, 0, 0, 0, 0]
+              }
+            }
+          }
 
           for (let answerSheetJsonArray of allAnswerSheetJsonArray) { // 遍历所有答卷
             let answerSheet = JSON.parse(answerSheetJsonArray) // 获取一份答卷，转换成Array
@@ -501,7 +509,7 @@ export default {
               let questionOptions = question.options
 
               if (question.type === _vm.questionType.SINGLE.name || question.type === _vm.questionType.MULTI.name || question.type === _vm.questionType.CALC.name) {
-                console.log(questionAnswer)
+                // console.log(questionAnswer)
                 if (typeof questionAnswer === 'string') {
                   for (let oIndex in questionOptions) {
                     let option = questionOptions[oIndex]
@@ -529,11 +537,10 @@ export default {
               }
 
               if (question.type === _vm.questionType.SCORE.name) {
-                for (let option of questionOptions) {
+                for (let oIndex in questionOptions) {
+                  let option = questionOptions[oIndex]
                   option.score = 0
                   option.count = 0
-                  option.counts = option.counts === null || typeof option.counts === 'undefined' || isNaN(option.counts) ? [0, 0, 0, 0, 0, 0] : option.counts
-                  option.percents = [0, 0, 0, 0, 0, 0]
                 }
                 for (let oIndex in questionOptions) {
                   questionOptions[oIndex].counts[parseInt(questionAnswer[oIndex]) - 1]++
